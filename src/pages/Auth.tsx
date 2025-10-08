@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User as UserIcon, Loader2 } from "lucide-react";
 
@@ -15,10 +16,11 @@ export default function Auth() {
   const [mode, setMode] = useState<"login" | "signup">(
     searchParams.get("mode") === "signup" ? "signup" : "login"
   );
-  
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -34,6 +36,14 @@ export default function Auth() {
 
     try {
       if (mode === "signup") {
+        if (!ageConfirmed) {
+          toast({
+            variant: "destructive",
+            title: "Debes confirmar que eres mayor de 18 años.",
+          });
+          setIsLoading(false);
+          return;
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -94,6 +104,44 @@ export default function Auth() {
     }
   };
 
+  const handleFacebookAuth = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "facebook",
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast({
+        variant: "destructive",
+        title: "Ingresa tu correo para recuperar tu contraseña.",
+      });
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth?mode=login`,
+    });
+    if (error) {
+      toast({ variant: "destructive", title: "Error", description: error.message });
+    } else {
+      toast({
+        title: "Revisa tu correo",
+        description: "Te enviamos un enlace para restablecer tu contraseña.",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-dark">
       <div className="w-full max-w-md">
@@ -122,6 +170,16 @@ export default function Auth() {
                     onChange={(e) => setFullName(e.target.value)}
                     required
                   />
+                </div>
+                <div className="flex items-center space-x-2 pt-2">
+                  <Checkbox
+                    id="ageConfirmed"
+                    checked={ageConfirmed}
+                    onCheckedChange={(v) => setAgeConfirmed(Boolean(v))}
+                  />
+                  <Label htmlFor="ageConfirmed" className="text-sm">
+                    Confirmo que tengo 18 años o más
+                  </Label>
                 </div>
               </div>
             )}
@@ -175,6 +233,18 @@ export default function Auth() {
                 "Crear cuenta"
               )}
             </Button>
+
+            {mode === "login" && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  className="text-sm text-primary hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+            )}
           </form>
 
           <div className="relative my-6">
@@ -211,6 +281,21 @@ export default function Auth() {
               />
             </svg>
             Google
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full mt-2"
+            onClick={handleFacebookAuth}
+          >
+            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M22 12a10 10 0 1 0-11.563 9.875v-6.988H7.898v-2.887h2.539V9.845c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.242 0-1.63.77-1.63 1.562v1.875h2.773l-.443 2.887h-2.33v6.988A10.001 10.001 0 0 0 22 12z"
+              />
+            </svg>
+            Facebook
           </Button>
 
           <div className="mt-6 text-center text-sm">

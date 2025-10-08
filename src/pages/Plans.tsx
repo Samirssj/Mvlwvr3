@@ -16,8 +16,8 @@ export default function Plans() {
       features: [
         "Contenido básico",
         "Calidad SD",
-        "Anuncios incluidos",
-        "1 dispositivo a la vez",
+        "Sin anuncios",
+        "Sin acceso a contenido premium",
       ],
       cta: "Plan Actual",
       variant: "outline" as const,
@@ -31,8 +31,7 @@ export default function Plans() {
         "Todo el catálogo sin límites",
         "Calidad HD y 4K",
         "Sin anuncios",
-        "4 dispositivos simultáneos",
-        "Descargas offline",
+        "Sin restricciones ",
         "Acceso anticipado a estrenos",
       ],
       cta: "Suscribirse Ahora",
@@ -93,7 +92,8 @@ export default function Plans() {
                       : ""
                   }`}
                   variant={plan.variant}
-                  onClick={() => navigate("/auth?mode=signup")}
+                  // Antes: onClick={() => navigate("/auth?mode=signup")}
+                  onClick={() => navigate("/checkout")}
                 >
                   {plan.cta}
                 </Button>

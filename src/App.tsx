@@ -8,6 +8,12 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Plans from "./pages/Plans";
 import NotFound from "./pages/NotFound";
+import Movie from "./pages/Movie";   // + añadido
+import Series from "./pages/Series"; // + añadido
+import Checkout from "./pages/Checkout"; // + añadido
+import Catalogo from "./pages/Catalogo"; // + añadido
+import Search from "./pages/Search"; // + añadido
+import Admin from "./pages/Admin"; // + añadido
 
 const queryClient = new QueryClient();
 
@@ -21,7 +27,22 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/perfil" element={<Profile />} />
           <Route path="/plans" element={<Plans />} />
+          <Route path="/catalogo" element={<Catalogo />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/admin" element={<Admin />} />
+
+          {/* Rutas de detalle */}
+          <Route path="/movie/:id" element={<Movie />} />
+          <Route path="/series/:id" element={<Series />} />
+          {/* Aliases en español como pide el prompt */}
+          <Route path="/pelicula/:id" element={<Movie />} />
+          <Route path="/serie/:id" element={<Series />} />
+
+          {/* Checkout */}
+          <Route path="/checkout" element={<Checkout />} />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
