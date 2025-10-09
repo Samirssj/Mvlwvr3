@@ -63,6 +63,7 @@ serve(async (req: Request) => {
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
   const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const CONFIRM_TOKEN_SECRET = Deno.env.get("CONFIRM_TOKEN_SECRET") ?? "";
+  const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ?? "";
 
   // READ SECRETS FROM ENV (configured in Supabase Functions → Secrets)
   const SENDGRID_API_KEY = Deno.env.get("SENDGRID_API_KEY") ?? "";
@@ -109,13 +110,44 @@ serve(async (req: Request) => {
     const toUser = profile?.email;
     // Send confirmation emails
     try {
-      if (toUser) {
-        await sendEmail(SENDGRID_API_KEY, EMAIL_FROM, toUser, "Suscripción activada", `<p>Tu pago fue confirmado. Vigencia hasta ${expires.toISOString().slice(0,10)}.</p>`);
-      }
-      await sendEmail(SENDGRID_API_KEY, EMAIL_FROM, EMAIL_ADMIN, "Pago confirmado", `<p>Pago ${pid} confirmado. Usuario: ${toUser || pay.user_id}.</p>`);
+      const expDate = expires.toISOString().slice(0,10);
+      const userHtml = `
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1220;padding:24px;color:#e5e7eb;font-family:Inter,Arial,Helvetica,sans-serif">
+          <tr><td align="center">
+            <table width="560" cellpadding="0" cellspacing="0" style="background:#0f172a;border:1px solid #1f2937;border-radius:12px">
+              <tr><td style="padding:24px">
+                <h2 style="margin:0 0 8px 0;color:#fff">Pago confirmado</h2>
+                <p style="margin:0 0 12px 0;color:#9ca3af">Tu suscripción premium ya está activa.</p>
+                <p style="margin:0 0 4px 0;color:#cbd5e1">Vigencia hasta <strong>${expDate}</strong></p>
+                <p style="margin:0 0 16px 0;color:#cbd5e1">Pago: <strong>${pay.amount} ${pay.currency}</strong></p>
+                <a href="${FRONTEND_URL || ""}/" style="display:inline-block;background:#22c55e;color:#061318;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Ir a ver contenido</a>
+              </td></tr>
+            </table>
+          </td></tr>
+        </table>`;
+      const adminHtml = `
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1220;padding:24px;color:#e5e7eb;font-family:Inter,Arial,Helvetica,sans-serif">
+          <tr><td align="center">
+            <table width="560" cellpadding="0" cellspacing="0" style="background:#0f172a;border:1px solid #1f2937;border-radius:12px">
+              <tr><td style="padding:24px">
+                <h2 style="margin:0 0 8px 0;color:#fff">Pago confirmado (manual)</h2>
+                <p style="margin:0 0 12px 0;color:#9ca3af">ID: ${pid}</p>
+                <p style="margin:0 0 4px 0;color:#cbd5e1">Usuario: ${toUser || pay.user_id}</p>
+                <p style="margin:0 0 16px 0;color:#cbd5e1">Monto: <strong>${pay.amount} ${pay.currency}</strong></p>
+              </td></tr>
+            </table>
+          </td></tr>
+        </table>`;
+      if (toUser) await sendEmail(SENDGRID_API_KEY, EMAIL_FROM, toUser, "Suscripción activada", userHtml);
+      await sendEmail(SENDGRID_API_KEY, EMAIL_FROM, EMAIL_ADMIN, "Pago confirmado", adminHtml);
     } catch (_) {}
 
-    // Redirect to a simple success JSON
+    // Redirect to success page if FRONTEND_URL is configured
+    if (FRONTEND_URL) {
+      const location = `${FRONTEND_URL}/payment-success?pid=${encodeURIComponent(pid)}`;
+      return new Response(null, { status: 302, headers: { Location: location, ...corsHeaders } });
+    }
+    // Fallback JSON
     return new Response(JSON.stringify({ ok: true, payment_id: pid }), { status: 200, headers: corsHeaders });
   }
 

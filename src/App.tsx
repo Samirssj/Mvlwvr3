@@ -11,6 +11,7 @@ import NotFound from "./pages/NotFound";
 import Movie from "./pages/Movie";   // + añadido
 import Series from "./pages/Series"; // + añadido
 import Checkout from "./pages/Checkout"; // + añadido
+import PaymentSuccess from "./pages/PaymentSuccess"; // + añadido
 import Catalogo from "./pages/Catalogo"; // + añadido
 import Search from "./pages/Search"; // + añadido
 import Admin from "./pages/Admin"; // + añadido
@@ -42,6 +43,7 @@ const App = () => (
 
           {/* Checkout */}
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
