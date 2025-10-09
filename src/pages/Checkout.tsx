@@ -109,8 +109,8 @@ export default function Checkout() {
           {method === "yape_qr" && (
             <div className="space-y-2">
               <Label>Escanea este QR en tu app de Yape</Label>
-              <div className="aspect-square w-60 border border-border rounded-md overflow-hidden">
-                <img src="/Qr-Yape.svg" className="w-full h-full object-cover" alt="QR Yape" />
+              <div className="w-64 md:w-72 aspect-square bg-white p-3 rounded-lg border border-border shadow-sm flex items-center justify-center">
+                <img src="/Qr-Yape.svg" className="w-full h-full object-contain" alt="QR Yape" />
               </div>
               <p className="text-xs text-muted-foreground">Monto: {currency === 'PEN' ? `S/ ${amount.toFixed(2)}` : `$ ${amount.toFixed(2)} ${currency}`}</p>
             </div>
@@ -119,8 +119,8 @@ export default function Checkout() {
           {method === "paypal_qr" && (
             <div className="space-y-2">
               <Label>Escanea este QR con PayPal</Label>
-              <div className="aspect-square w-60 border border-border rounded-md overflow-hidden">
-                <img src="/Qr-Paypal.svg" className="w-full h-full object-cover" alt="QR PayPal" />
+              <div className="w-64 md:w-72 aspect-square bg-white p-3 rounded-lg border border-border shadow-sm flex items-center justify-center">
+                <img src="/Qr-Paypal.svg" className="w-full h-full object-contain" alt="QR PayPal" />
               </div>
               <p className="text-xs text-muted-foreground">Monto: {currency === 'PEN' ? `S/ ${amount.toFixed(2)}` : `$ ${amount.toFixed(2)} ${currency}`}</p>
             </div>
