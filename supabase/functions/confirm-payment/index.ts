@@ -116,11 +116,11 @@ serve(async (req: Request) => {
           <tr><td align="center">
             <table width="560" cellpadding="0" cellspacing="0" style="background:#0f172a;border:1px solid #1f2937;border-radius:12px">
               <tr><td style="padding:24px">
-                <h2 style="margin:0 0 8px 0;color:#fff">Pago confirmado</h2>
+                <h2 style="margin:0 0 8px 0;color:#0040ff">Pago confirmado</h2>
                 <p style="margin:0 0 12px 0;color:#9ca3af">Tu suscripción premium ya está activa.</p>
                 <p style="margin:0 0 4px 0;color:#cbd5e1">Vigencia hasta <strong>${expDate}</strong></p>
                 <p style="margin:0 0 16px 0;color:#cbd5e1">Pago: <strong>${pay.amount} ${pay.currency}</strong></p>
-                <a href="${FRONTEND_URL || ""}/" style="display:inline-block;background:#22c55e;color:#061318;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Ir a ver contenido</a>
+                <a href="${FRONTEND_URL || ""}/" style="display:inline-block;background:#0040ff;color:#ffffff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Ir a ver contenido</a>
               </td></tr>
             </table>
           </td></tr>
@@ -130,7 +130,7 @@ serve(async (req: Request) => {
           <tr><td align="center">
             <table width="560" cellpadding="0" cellspacing="0" style="background:#0f172a;border:1px solid #1f2937;border-radius:12px">
               <tr><td style="padding:24px">
-                <h2 style="margin:0 0 8px 0;color:#fff">Pago confirmado (manual)</h2>
+                <h2 style="margin:0 0 8px 0;color:#0040ff">Pago confirmado (manual)</h2>
                 <p style="margin:0 0 12px 0;color:#9ca3af">ID: ${pid}</p>
                 <p style="margin:0 0 4px 0;color:#cbd5e1">Usuario: ${toUser || pay.user_id}</p>
                 <p style="margin:0 0 16px 0;color:#cbd5e1">Monto: <strong>${pay.amount} ${pay.currency}</strong></p>

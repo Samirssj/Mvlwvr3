@@ -15,6 +15,7 @@ import PaymentSuccess from "./pages/PaymentSuccess"; // + añadido
 import Catalogo from "./pages/Catalogo"; // + añadido
 import Search from "./pages/Search"; // + añadido
 import Admin from "./pages/Admin"; // + añadido
+import { FirstVisitNotice } from "@/components/FirstVisitNotice"; // + añadido
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <FirstVisitNotice />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />

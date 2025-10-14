@@ -264,3 +264,4 @@ CREATE TRIGGER update_subscriptions_updated_at
 CREATE TRIGGER update_content_updated_at
   BEFORE UPDATE ON public.content
   FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+

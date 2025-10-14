@@ -48,7 +48,7 @@ export default function Plans() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Elige tu <span className="bg-gradient-electric bg-clip-text text-transparent">Plan</span>
+              Elige tu <span className="bg-gradient-electric bg-clip-text text-transparent">Donación</span>
             </h1>
             <p className="text-xl text-muted-foreground">
               Disfruta del mejor contenido sin compromisos. Cancela cuando quieras.

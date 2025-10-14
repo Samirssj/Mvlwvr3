@@ -62,10 +62,18 @@ serve(async (req: Request) => {
   const link = `${base}/confirm-payment?pid=${paymentId}&token=${token}`;
 
   const html = `
-    <h2>Nuevo pago recibido</h2>
-    <p>Método: ${pay.payment_method} | Monto: ${pay.amount} ${pay.currency}</p>
-    <p>Confirmar manualmente:</p>
-    <p><a href="${link}" style="display:inline-block;padding:10px 16px;background:#1e293b;color:#fff;border-radius:8px;text-decoration:none">Confirmar pago</a></p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#0b1220;padding:24px;color:#e5e7eb;font-family:Inter,Arial,Helvetica,sans-serif">
+      <tr><td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="background:#0f172a;border:1px solid #1f2937;border-radius:12px">
+          <tr><td style="padding:24px">
+            <h2 style="margin:0 0 8px 0;color:#0040ff">Nuevo pago recibido</h2>
+            <p style="margin:0 0 8px 0;color:#cbd5e1">Método: <strong>${pay.payment_method}</strong></p>
+            <p style="margin:0 16px 16px 0;color:#cbd5e1">Monto: <strong>${pay.amount} ${pay.currency}</strong></p>
+            <a href="${link}" style="display:inline-block;background:#0040ff;color:#ffffff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Confirmar pago</a>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
   `;
 
   await sendEmail(SENDGRID_API_KEY, EMAIL_FROM, EMAIL_ADMIN, "Nuevo pago pendiente", html);
