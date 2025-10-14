@@ -1,15 +1,21 @@
-import { useEffect, useState } from "react";
-import { X, Megaphone, ShieldAlert } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { X, Megaphone, ShieldAlert, Smartphone } from "lucide-react";
 
 // Floating notice shown only on first visit (per browser) using localStorage
 export function FirstVisitNotice() {
   const [open, setOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     try {
       const k = localStorage.getItem("first_visit_notice_shown");
       if (!k) setOpen(true);
     } catch {}
+    // rudimentary device detection
+    const mq = typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)') : null;
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+    const mobileLike = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    setIsMobile(mq?.matches || mobileLike);
   }, []);
 
   const close = () => {
@@ -33,15 +39,25 @@ export function FirstVisitNotice() {
 
           <div className="flex items-start gap-3">
             <div className="mt-0.5">
-              <Megaphone className="h-6 w-6" style={{ color: "#0040ff" }} />
+              {isMobile ? (
+                <Smartphone className="h-6 w-6" style={{ color: "#0040ff" }} />
+              ) : (
+                <Megaphone className="h-6 w-6" style={{ color: "#0040ff" }} />
+              )}
             </div>
             <div className="space-y-1">
               <h3 className="text-base font-semibold" style={{ color: "#0040ff" }}>
                 Hola Bienvenido/a
               </h3>
-              <p className="text-sm leading-relaxed" style={{ color: "#0040ff" }}>
-                Las películas son traídas de un servidor externo que contiene anuncios. Te recomiendo usar un bloqueador de anuncios como <span className="font-semibold" style={{ color: "#ff1a1a" }}>AdBlock</span> para ver sin anuncios y disfrutar de una mejor experiencia, ¡GRACIAS!
-              </p>
+              {isMobile ? (
+                <p className="text-sm leading-relaxed" style={{ color: "#0040ff" }}>
+                  Hola Bienvenido/a Las peliculas son tridas de un servidos externo que con tiene anuncios te recomiendo hacer esto en tu movil, Ve a tus ajustes y busca DNS privado en la opcion que permite escribir segun el movil que tengas escribes esto (<span className="font-semibold" style={{ color: "#ff1a1a" }}>dns.adguard.com</span>) y sales esto bloqueara los anuncios en general de tu movil
+                </p>
+              ) : (
+                <p className="text-sm leading-relaxed" style={{ color: "#0040ff" }}>
+                  Las películas son traídas de un servidor externo que contiene anuncios. Te recomiendo usar un bloqueador de anuncios como <span className="font-semibold" style={{ color: "#ff1a1a" }}>AdBlock</span> para ver sin anuncios y disfrutar de una mejor experiencia, ¡GRACIAS!
+                </p>
+              )}
               <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
                 <ShieldAlert className="h-4 w-4" />
                 <span>Este mensaje se muestra solo en tu primera visita.</span>

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,6 +7,18 @@ import { useNavigate } from "react-router-dom";
 
 export default function Plans() {
   const navigate = useNavigate();
+  const [amount, setAmount] = useState<number>(29.9);
+  const [currency, setCurrency] = useState<string>("PEN");
+
+  useEffect(() => {
+    fetch("/functions/v1/pricing")
+      .then((r) => r.json())
+      .then((d) => {
+        if (typeof d.amount === "number") setAmount(d.amount);
+        if (typeof d.currency === "string") setCurrency(d.currency);
+      })
+      .catch(() => {});
+  }, []);
 
   const plans = [
     {
@@ -24,7 +37,7 @@ export default function Plans() {
     },
     {
       name: "Premium",
-      price: "S/29.90",
+      price: "dynamic",
       period: "al mes",
       icon: Crown,
       features: [
@@ -71,8 +84,19 @@ export default function Plans() {
                   </div>
                   <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-4xl font-bold text-primary">{plan.price}</span>
-                    <span className="text-muted-foreground">/{plan.period}</span>
+                    {plan.price === "dynamic" ? (
+                      <>
+                        <span className="text-4xl font-bold text-primary">
+                          {currency === "PEN" ? `S/ ${amount.toFixed(2)}` : `$ ${amount.toFixed(2)} ${currency}`}
+                        </span>
+                        <span className="text-muted-foreground">/{plan.period}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-4xl font-bold text-primary">{plan.price}</span>
+                        <span className="text-muted-foreground">/{plan.period}</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
