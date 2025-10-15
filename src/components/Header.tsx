@@ -38,16 +38,7 @@ export const Header = () => {
     }
   };
 
-  // Live search (debounced) for both desktop and mobile inputs
-  useEffect(() => {
-    const q = searchQuery.trim();
-    const t = setTimeout(() => {
-      if (q.length > 0) {
-        navigate(`/search?q=${encodeURIComponent(q)}`);
-      }
-    }, 300);
-    return () => clearTimeout(t);
-  }, [searchQuery, navigate]);
+  // Removed auto-navigation on typing to match Paramount-like UX
 
   // Fetch inline results for overlay (Paramount-like preview)
   useEffect(() => {
@@ -110,16 +101,6 @@ export const Header = () => {
         </form>
 
         <nav className="flex items-center gap-2">
-          {/* Mobile search toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden hover:bg-secondary"
-            aria-label="Buscar"
-            onClick={() => setShowMobileSearch((s) => !s)}
-          >
-            {showMobileSearch ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
-          </Button>
           {session ? (
             <>
               <Button
