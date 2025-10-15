@@ -10,10 +10,9 @@ export const Header = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false); // solo móvil
+  const [searchOpen, setSearchOpen] = useState(false);
   const [loadingResults, setLoadingResults] = useState(false);
   const [results, setResults] = useState<Array<{ id: string; title: string; image_url: string | null; content_type: "movie" | "series" }>>([]);
-  const [isDesktop, setIsDesktop] = useState<boolean>(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -46,8 +45,7 @@ export const Header = () => {
   useEffect(() => {
     const q = searchQuery.trim();
     let abort = false;
-    // Mostrar resultados cuando haya texto y (overlay abierto en móvil) o (estemos en desktop)
-    if (q.length === 0 || (!searchOpen && !isDesktop)) {
+    if (q.length === 0 || !searchOpen) {
       setResults([]);
       return;
     }
@@ -67,9 +65,9 @@ export const Header = () => {
         if (!abort) setLoadingResults(false);
       }
     };
-    const h = setTimeout(run, 100);
-    return () => { abort = true; clearTimeout(h); };
-  }, [searchQuery, searchOpen, isDesktop]);
+    run();
+    return () => { abort = true; };
+  }, [searchQuery, searchOpen]);
 
   // Close with ESC
   useEffect(() => {
@@ -91,15 +89,6 @@ export const Header = () => {
     return () => { document.body.style.overflow = prev || ""; };
   }, [searchOpen]);
 
-  // Track viewport to decide desktop vs móvil
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    const onChange = () => setIsDesktop(mq.matches);
-    onChange();
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-
   return (
     <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-border">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
@@ -108,26 +97,15 @@ export const Header = () => {
             Mvlwvr3
           </div>
         </Link>
-        {/* Desktop inline search */}
-        <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Buscar películas y series..."
-              className="pl-10 bg-secondary border-border focus:border-primary"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </form>
+        {/* Center spacer keeps brand left and actions right */}
+        <div className="flex-1" />
 
         <nav className="flex items-center gap-2">
-          {/* Icono de búsqueda solo en móvil */}
+          {/* Single search icon (mobile + desktop) */}
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden hover:bg-secondary"
+            className="hover:bg-secondary"
             aria-label="Buscar"
             onClick={() => setSearchOpen(true)}
           >
@@ -172,7 +150,7 @@ export const Header = () => {
         </nav>
       </div>
 
-      {/* Full-screen search overlay (móvil) */}
+      {/* Full-screen search overlay */}
       {searchOpen && (
         <div className="fixed inset-0 z-[60] bg-black flex flex-col">
           <div className="p-4 sm:p-6">
@@ -230,34 +208,6 @@ export const Header = () => {
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Desktop live results below header */}
-      {isDesktop && searchQuery.trim().length > 0 && (
-        <div className="hidden md:block border-t border-border bg-background/95">
-          <div className="container mx-auto px-4 py-3">
-            {loadingResults ? (
-              <div className="text-sm text-muted-foreground">Buscando...</div>
-            ) : results.length === 0 ? (
-              <div className="text-sm text-muted-foreground">Sin resultados.</div>
-            ) : (
-              <div className="grid grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-                {results.map((r) => (
-                  <Link key={r.id} to={r.content_type === "series" ? `/series/${r.id}` : `/movie/${r.id}`} className="group">
-                    <div className="aspect-[2/3] w-full overflow-hidden rounded-lg border border-border bg-secondary">
-                      {r.image_url ? (
-                        <img src={r.image_url} alt={r.title} className="h-full w-full object-cover group-hover:opacity-90 transition" />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">Sin imagen</div>
-                      )}
-                    </div>
-                    <div className="mt-1 text-xs line-clamp-2">{r.title}</div>
-                  </Link>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       )}
