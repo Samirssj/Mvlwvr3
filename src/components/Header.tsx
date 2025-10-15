@@ -54,17 +54,20 @@ export const Header = () => {
       try {
         const { data, error } = await supabase
           .from("content")
-          .select("id,title,image_url,content_type")
+          .select("id,title,image_url,content_type,created_at")
           .ilike("title", `%${q}%`)
           .order("created_at", { ascending: false })
           .limit(24);
-        if (error) throw error;
+        if (error) {
+          setResults([]);
+          return;
+        }
         if (!abort) setResults((data as any[]) || []);
       } finally {
         if (!abort) setLoadingResults(false);
       }
     };
-    const h = setTimeout(run, 200);
+    const h = setTimeout(run, 100);
     return () => { abort = true; clearTimeout(h); };
   }, [searchQuery, searchOpen]);
 
