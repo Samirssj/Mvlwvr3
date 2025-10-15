@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { ContentCard } from "@/components/ContentCard";
+import { CarouselRow } from "@/components/CarouselRow";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Play, TrendingUp, Film, Tv } from "lucide-react";
@@ -21,9 +22,11 @@ const Index = () => {
   const [movies, setMovies] = useState<Content[]>([]);
   const [series, setSeries] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
+  const [continueWatching, setContinueWatching] = useState<any[]>([]);
 
   useEffect(() => {
     loadContent();
+    loadContinueWatching();
   }, []);
 
   const loadContent = async () => {
@@ -55,6 +58,24 @@ const Index = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadContinueWatching = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("watch_progress")
+        .select("content:content_id(id,title,image_url,content_type,is_premium,is_new), progress_seconds, last_watched_at")
+        .eq("user_id", user.id)
+        .order("last_watched_at", { ascending: false })
+        .limit(24);
+      const items = (data || [])
+        .map((r: any) => ({ ...r.content, progress: r.progress_seconds }))
+        .filter((c: any) => c && c.id);
+      const unique = Array.from(new Map(items.map((c: any) => [c.id, c])).values());
+      setContinueWatching(unique);
+    } catch {}
   };
 
   return (
@@ -102,17 +123,31 @@ const Index = () => {
       </section>
 
       <div className="container mx-auto px-4 py-12 space-y-12">
+        {/* Continuar viendo */}
+        {continueWatching.length > 0 && (
+          <CarouselRow title="Continuar viendo">
+            {continueWatching.map((c: any) => (
+              <div key={c.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
+                <ContentCard
+                  id={c.id}
+                  title={c.title}
+                  imageUrl={c.image_url || undefined}
+                  contentType={c.content_type}
+                  isPremium={c.is_premium}
+                  isNew={c.is_new}
+                  progress={c.progress ? Math.min((c.progress / (60 * 60)) * 100, 100) : undefined}
+                />
+              </div>
+            ))}
+          </CarouselRow>
+        )}
+
         {/* Estrenos */}
         {newReleases.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-6">
-              <div className="h-8 w-1 bg-primary rounded-full" />
-              <h2 className="text-2xl font-bold">Estrenos</h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {newReleases.map((content) => (
+          <CarouselRow title="Estrenos">
+            {newReleases.map((content) => (
+              <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
                 <ContentCard
-                  key={content.id}
                   id={content.id}
                   title={content.title}
                   imageUrl={content.image_url || undefined}
@@ -120,22 +155,17 @@ const Index = () => {
                   isPremium={content.is_premium}
                   isNew={content.is_new}
                 />
-              ))}
-            </div>
-          </section>
+              </div>
+            ))}
+          </CarouselRow>
         )}
 
         {/* Películas */}
         {movies.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-6">
-              <Film className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">Películas Populares</h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {movies.map((content) => (
+          <CarouselRow title="Películas Populares">
+            {movies.map((content) => (
+              <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
                 <ContentCard
-                  key={content.id}
                   id={content.id}
                   title={content.title}
                   imageUrl={content.image_url || undefined}
@@ -143,22 +173,17 @@ const Index = () => {
                   isPremium={content.is_premium}
                   isNew={content.is_new}
                 />
-              ))}
-            </div>
-          </section>
+              </div>
+            ))}
+          </CarouselRow>
         )}
 
         {/* Series */}
         {series.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-6">
-              <Tv className="h-6 w-6 text-primary" />
-              <h2 className="text-2xl font-bold">Series Destacadas</h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {series.map((content) => (
+          <CarouselRow title="Series Destacadas">
+            {series.map((content) => (
+              <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
                 <ContentCard
-                  key={content.id}
                   id={content.id}
                   title={content.title}
                   imageUrl={content.image_url || undefined}
@@ -166,9 +191,9 @@ const Index = () => {
                   isPremium={content.is_premium}
                   isNew={content.is_new}
                 />
-              ))}
-            </div>
-          </section>
+              </div>
+            ))}
+          </CarouselRow>
         )}
 
         {!loading && newReleases.length === 0 && movies.length === 0 && series.length === 0 && (

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { CarouselRow } from "@/components/CarouselRow";
+import { ContentCard } from "@/components/ContentCard";
+
 import Player from "@/components/Player";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +31,7 @@ type Episode = {
   season_number: number;
   title: string | null;
   embed_url: string;
+  created_at?: string | null;
 };
 
 export default function Series() {
@@ -37,6 +41,8 @@ export default function Series() {
   const [content, setContent] = useState<Content | null>(null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [current, setCurrent] = useState<Episode | null>(null);
+  const [similar, setSimilar] = useState<any[]>([]);
+  const [trending, setTrending] = useState<any[]>([]);
 
   useEffect(() => {
     if (!id) return;
@@ -70,6 +76,34 @@ export default function Series() {
     };
     load();
   }, [id, navigate]);
+
+  useEffect(() => {
+    if (!content) return;
+    const run = async () => {
+      // Similares: mismo tipo, recientes, excluye el actual
+      const { data: sim } = await supabase
+        .from("content")
+        .select("*")
+        .eq("content_type", "series")
+        .neq("id", content.id)
+        .order("created_at", { ascending: false })
+        .limit(18);
+      setSimilar(sim || []);
+
+      // Tendencia: últimos vistos, deduplicado por content
+      const { data: views } = await supabase
+        .from("watch_progress")
+        .select("content:content_id(id,title,image_url,content_type,is_premium,is_new), last_watched_at")
+        .order("last_watched_at", { ascending: false })
+        .limit(100);
+      const items = (views || [])
+        .map((r: any) => r.content)
+        .filter((c: any) => c && c.id && c.content_type === "series" && c.id !== content.id);
+      const unique = Array.from(new Map(items.map((c: any) => [c.id, c])).values()).slice(0, 18);
+      setTrending(unique);
+    };
+    run();
+  }, [content]);
 
   const grouped = useMemo(() => {
     const map = new Map<number, Episode[]>();
@@ -106,6 +140,32 @@ export default function Series() {
                 <Crown className="h-3 w-3 mr-1" /> Premium
               </Badge>
             )}
+            {/* Badges de novedades (últimos 10 días) */}
+            {(() => {
+              const now = Date.now();
+              const recent = episodes.some((ep) => ep.created_at && (now - new Date(ep.created_at).getTime()) <= 10 * 24 * 60 * 60 * 1000);
+              let newSeason = false;
+              if (episodes.length > 0) {
+                const seasons = Array.from(new Set(episodes.map((e) => e.season_number))).sort((a, b) => a - b);
+                const latest = seasons[seasons.length - 1];
+                const latestRecent = episodes.some((e) => e.season_number === latest && e.created_at && (now - new Date(e.created_at).getTime()) <= 10 * 24 * 60 * 60 * 1000);
+                newSeason = latestRecent && seasons.length > 1;
+              }
+              return (
+                <>
+                  {recent && (
+                    <Badge className="bg-green-600/90 text-white">
+                      <Sparkles className="h-3 w-3 mr-1" /> Nuevos episodios
+                    </Badge>
+                  )}
+                  {newSeason && (
+                    <Badge className="bg-blue-600/90 text-white">
+                      <Sparkles className="h-3 w-3 mr-1" /> Nueva temporada
+                    </Badge>
+                  )}
+                </>
+              );
+            })()}
           </div>
           <h1 className="text-2xl md:text-3xl font-bold">{content.title}</h1>
         </div>
@@ -157,6 +217,42 @@ export default function Series() {
             </Card>
           ))}
         </div>
+
+        {/* Recomendaciones: Similares */}
+        {similar.length > 0 && (
+          <CarouselRow title="Similares">
+            {similar.map((c: any) => (
+              <div key={c.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
+                <ContentCard
+                  id={c.id}
+                  title={c.title}
+                  imageUrl={c.image_url || undefined}
+                  contentType={c.content_type}
+                  isPremium={c.is_premium}
+                  isNew={c.is_new}
+                />
+              </div>
+            ))}
+          </CarouselRow>
+        )}
+
+        {/* Recomendaciones: Tendencia */}
+        {trending.length > 0 && (
+          <CarouselRow title="Tendencia">
+            {trending.map((c: any) => (
+              <div key={c.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
+                <ContentCard
+                  id={c.id}
+                  title={c.title}
+                  imageUrl={c.image_url || undefined}
+                  contentType={c.content_type}
+                  isPremium={c.is_premium}
+                  isNew={c.is_new}
+                />
+              </div>
+            ))}
+          </CarouselRow>
+        )}
       </div>
     </div>
   );
