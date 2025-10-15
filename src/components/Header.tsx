@@ -35,7 +35,7 @@ export const Header = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setSearchOpen(false);
+      // Mantener overlay abierto mientras el usuario sigue buscando
     }
   };
 
@@ -52,23 +52,13 @@ export const Header = () => {
     const run = async () => {
       setLoadingResults(true);
       try {
-        // First try prefix match (starts with)
+        // Contains match (any position, case-insensitive)
         let { data, error } = await supabase
           .from("content")
           .select("id,title,image_url,content_type,created_at")
-          .ilike("title", `${q}%`)
+          .ilike("title", `%${q}%`)
           .order("title", { ascending: true })
           .limit(24);
-        // If no prefix results, fallback to contains
-        if (!error && Array.isArray(data) && data.length === 0) {
-          const res2 = await supabase
-            .from("content")
-            .select("id,title,image_url,content_type,created_at")
-            .ilike("title", `%${q}%`)
-            .order("created_at", { ascending: false })
-            .limit(24);
-          if (!res2.error) data = res2.data as any[];
-        }
         if (error) { setResults([]); return; }
         if (!abort) setResults((data as any[]) || []);
       } finally {
