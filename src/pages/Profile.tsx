@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { ContentCard } from "@/components/ContentCard";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,9 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [viewsThisWeek, setViewsThisWeek] = useState<any[]>([]);
+  const [lists, setLists] = useState<any[]>([]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -58,6 +62,40 @@ export default function Profile() {
 
       setProfile(profileData);
       setSubscription(subData);
+      // Load dashboard data
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      // Favorites (join content)
+      const { data: favRows } = await (supabase as any)
+        .from("favorites")
+        .select("content:content_id(id,title,image_url,content_type,is_premium,is_new)")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(24);
+      setFavorites((favRows || []).map((r: any) => r.content).filter(Boolean));
+
+      // Views this week from watch_progress
+      const { data: viewRows } = await supabase
+        .from("watch_progress")
+        .select("content:content_id(id,title,image_url,content_type,is_premium,is_new), progress_seconds, last_watched_at")
+        .eq("user_id", userId)
+        .gte("last_watched_at", sevenDaysAgo)
+        .order("last_watched_at", { ascending: false })
+        .limit(24);
+      setViewsThisWeek((viewRows || []).map((r: any) => ({ ...r.content, progress: r.progress_seconds })).filter((c: any) => c && c.id));
+
+      // Lists (optional): if table exists, try to read minimal structure
+      try {
+        const { data: listRows } = await (supabase as any)
+          .from("lists")
+          .select("id,name,created_at")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(12);
+        setLists(listRows || []);
+      } catch (_e) {
+        setLists([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -150,18 +188,82 @@ export default function Profile() {
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="p-6 bg-card border-border text-center">
-              <p className="text-3xl font-bold text-primary">0</p>
+              <p className="text-3xl font-bold text-primary">{viewsThisWeek.length}</p>
               <p className="text-sm text-muted-foreground">Vistas esta semana</p>
             </Card>
             <Card className="p-6 bg-card border-border text-center">
-              <p className="text-3xl font-bold text-primary">0</p>
+              <p className="text-3xl font-bold text-primary">{favorites.length}</p>
               <p className="text-sm text-muted-foreground">Favoritos</p>
             </Card>
             <Card className="p-6 bg-card border-border text-center">
-              <p className="text-3xl font-bold text-primary">0</p>
+              <p className="text-3xl font-bold text-primary">{lists.length}</p>
               <p className="text-sm text-muted-foreground">Listas</p>
             </Card>
           </div>
+
+          {/* Views this week */}
+          {viewsThisWeek.length > 0 && (
+            <section className="mt-8">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-6 w-1 bg-primary rounded-full" />
+                <h3 className="text-xl font-semibold">Visto esta semana</h3>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {viewsThisWeek.map((c: any) => (
+                  <ContentCard
+                    key={c.id}
+                    id={c.id}
+                    title={c.title}
+                    imageUrl={c.image_url || undefined}
+                    contentType={c.content_type}
+                    isPremium={c.is_premium}
+                    isNew={c.is_new}
+                    progress={c.progress ? Math.min((c.progress / (60 * 60)) * 100, 100) : undefined}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Favorites */}
+          {favorites.length > 0 && (
+            <section className="mt-8">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="h-6 w-1 bg-primary rounded-full" />
+                <h3 className="text-xl font-semibold">Favoritos</h3>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {favorites.map((c: any) => (
+                  <ContentCard
+                    key={c.id}
+                    id={c.id}
+                    title={c.title}
+                    imageUrl={c.image_url || undefined}
+                    contentType={c.content_type}
+                    isPremium={c.is_premium}
+                    isNew={c.is_new}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Lists placeholder minimal */}
+          {lists.length > 0 && (
+            <section className="mt-8">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-6 w-1 bg-primary rounded-full" />
+                <h3 className="text-xl font-semibold">Listas</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-muted-foreground">
+                {lists.map((l: any) => (
+                  <div key={l.id} className="p-3 rounded-lg border border-border bg-card/60">
+                    {l.name || "Lista sin nombre"}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </div>
