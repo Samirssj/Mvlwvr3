@@ -154,26 +154,26 @@ export const Header = () => {
       {searchOpen && (
         <div className="fixed inset-0 z-[60] bg-black flex flex-col">
           <div className="p-4 sm:p-6">
-            <div className="mx-auto max-w-3xl">
+            <div className="mx-auto max-w-3xl relative">
+              <button
+                type="button"
+                aria-label="Cerrar"
+                onClick={() => setSearchOpen(false)}
+                className="absolute -top-2 right-0 sm:-top-4 sm:right-0 rounded-md p-2 hover:bg-secondary border border-transparent hover:border-border"
+              >
+                <X className="h-5 w-5" />
+              </button>
               <form onSubmit={handleSearch}>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     autoFocus
-                    type="search"
+                    type="text"
                     placeholder="Buscar películas y series..."
                     className="pl-12 h-12 rounded-xl bg-card border-border focus:border-primary"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
-                  <button
-                    type="button"
-                    aria-label="Cerrar"
-                    onClick={() => setSearchOpen(false)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 hover:bg-secondary border border-transparent hover:border-border"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
                 </div>
               </form>
             </div>
