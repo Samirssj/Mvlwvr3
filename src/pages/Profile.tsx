@@ -74,15 +74,17 @@ export default function Profile() {
         .limit(24);
       setFavorites((favRows || []).map((r: any) => r.content).filter(Boolean));
 
-      // Views this week from watch_progress
+      // Views this week from watch_progress (unique by content id)
       const { data: viewRows } = await supabase
         .from("watch_progress")
         .select("content:content_id(id,title,image_url,content_type,is_premium,is_new), progress_seconds, last_watched_at")
         .eq("user_id", userId)
         .gte("last_watched_at", sevenDaysAgo)
         .order("last_watched_at", { ascending: false })
-        .limit(24);
-      setViewsThisWeek((viewRows || []).map((r: any) => ({ ...r.content, progress: r.progress_seconds })).filter((c: any) => c && c.id));
+        .limit(100);
+      const viewContents = (viewRows || []).map((r: any) => r.content).filter((c: any) => c && c.id);
+      const uniqueViews = Array.from(new Map(viewContents.map((c: any) => [c.id, c])).values());
+      setViewsThisWeek(uniqueViews);
 
       // Lists (optional): if table exists, try to read minimal structure
       try {
@@ -201,27 +203,20 @@ export default function Profile() {
             </Card>
           </div>
 
-          {/* Views this week */}
+          {/* Views this week (titles only, unique) */}
           {viewsThisWeek.length > 0 && (
             <section className="mt-8">
               <div className="flex items-center gap-2 mb-4">
                 <div className="h-6 w-1 bg-primary rounded-full" />
                 <h3 className="text-xl font-semibold">Visto esta semana</h3>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <ul className="space-y-2">
                 {viewsThisWeek.map((c: any) => (
-                  <ContentCard
-                    key={c.id}
-                    id={c.id}
-                    title={c.title}
-                    imageUrl={c.image_url || undefined}
-                    contentType={c.content_type}
-                    isPremium={c.is_premium}
-                    isNew={c.is_new}
-                    progress={c.progress ? Math.min((c.progress / (60 * 60)) * 100, 100) : undefined}
-                  />
+                  <li key={c.id} className="text-sm text-foreground">
+                    {c.title}
+                  </li>
                 ))}
-              </div>
+              </ul>
             </section>
           )}
 
