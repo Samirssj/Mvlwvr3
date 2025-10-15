@@ -143,8 +143,8 @@ export const Header = () => {
 
       {/* Full-screen search overlay */}
       {searchOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur">
-          <div className="absolute top-0 left-0 right-0 p-4 sm:p-6">
+        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur flex flex-col">
+          <div className="p-4 sm:p-6">
             <div className="mx-auto max-w-3xl">
               <form onSubmit={handleSearch}>
                 <div className="relative">
@@ -169,7 +169,7 @@ export const Header = () => {
               </form>
             </div>
           </div>
-          <div className="absolute inset-x-0 top-20 sm:top-28 bottom-0 overflow-auto">
+          <div className="flex-1 overflow-auto">
             <div className="container mx-auto px-4 pb-8">
               {searchQuery.trim().length === 0 ? (
                 <div className="text-center text-muted-foreground py-10">Empieza a escribir para ver resultados</div>
