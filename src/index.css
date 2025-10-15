@@ -85,4 +85,13 @@ All colors MUST be HSL.
   .gradient-electric {
     background: var(--gradient-electric);
   }
+
+  /* Hide scrollbars utility */
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
 }
