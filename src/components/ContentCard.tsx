@@ -1,5 +1,8 @@
 import { Link } from "react-router-dom";
-import { Play, Clock, Crown } from "lucide-react";
+import { Play, Clock, Crown, Heart } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface ContentCardProps {
@@ -21,6 +24,49 @@ export const ContentCard = ({
   isNew,
   progress,
 }: ContentCardProps) => {
+  const [fav, setFav] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await (supabase as any)
+        .from("favorites")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("content_id", id)
+        .maybeSingle();
+      if (mounted) setFav(!!data);
+    })();
+    return () => { mounted = false; };
+  }, [id]);
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (loading) return;
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      if (!fav) {
+        const { error } = await (supabase as any).from("favorites").insert({ user_id: user.id, content_id: id });
+        if (!error) setFav(true);
+      } else {
+        const { error } = await (supabase as any)
+          .from("favorites")
+          .delete()
+          .eq("content_id", id)
+          .eq("user_id", user.id);
+        if (!error) setFav(false);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Link
       to={`/${contentType}/${id}`}
@@ -63,6 +109,20 @@ export const ContentCard = ({
               Premium
             </Badge>
           )}
+        </div>
+
+        {/* Favorite button */}
+        <div className="absolute top-2 right-2">
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 rounded-full bg-background/70 hover:bg-background/90 border border-border"
+            onClick={toggleFavorite}
+            disabled={loading}
+            aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
+          >
+            <Heart className={`h-4 w-4 ${fav ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+          </Button>
         </div>
 
         {/* Progress bar */}
