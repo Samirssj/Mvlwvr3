@@ -10,7 +10,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [loadingResults, setLoadingResults] = useState(false);
   const [results, setResults] = useState<Array<{ id: string; title: string; image_url: string | null; content_type: "movie" | "series" }>>([]);
 
@@ -35,16 +35,17 @@ export const Header = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setSearchOpen(false);
     }
   };
 
   // Removed auto-navigation on typing to match Paramount-like UX
 
-  // Fetch inline results for overlay (Paramount-like preview)
+  // Fetch results for overlay (Paramount-like preview)
   useEffect(() => {
     const q = searchQuery.trim();
     let abort = false;
-    if (q.length === 0) {
+    if (q.length === 0 || !searchOpen) {
       setResults([]);
       return;
     }
@@ -56,16 +57,25 @@ export const Header = () => {
           .select("id,title,image_url,content_type")
           .ilike("title", `%${q}%`)
           .order("created_at", { ascending: false })
-          .limit(12);
+          .limit(24);
         if (error) throw error;
         if (!abort) setResults((data as any[]) || []);
       } finally {
         if (!abort) setLoadingResults(false);
       }
     };
-    const h = setTimeout(run, 250);
+    const h = setTimeout(run, 200);
     return () => { abort = true; clearTimeout(h); };
-  }, [searchQuery]);
+  }, [searchQuery, searchOpen]);
+
+  // Close with ESC
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSearchOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   return (
     <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-border">
@@ -75,32 +85,20 @@ export const Header = () => {
             Mvlwvr3
           </div>
         </Link>
-
-        {/* Extra mobile search icon near logo to ensure visibility */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="md:hidden hover:bg-secondary"
-          aria-label="Buscar"
-          onClick={() => setShowMobileSearch((s) => !s)}
-        >
-          {showMobileSearch ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
-        </Button>
-
-        <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-md">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar películas y series..."
-              className="pl-10 bg-secondary border-border focus:border-primary"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </form>
+        {/* Center spacer keeps brand left and actions right */}
+        <div className="flex-1" />
 
         <nav className="flex items-center gap-2">
+          {/* Single search icon (mobile + desktop) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-secondary"
+            aria-label="Buscar"
+            onClick={() => setSearchOpen(true)}
+          >
+            <Search className="h-5 w-5" />
+          </Button>
           {session ? (
             <>
               <Button
@@ -139,78 +137,65 @@ export const Header = () => {
           )}
         </nav>
       </div>
-      {/* Mobile search bar (slide-down) */}
-      {showMobileSearch && (
-        <div className="md:hidden border-t border-border bg-background/95">
-          <div className="container mx-auto px-4 py-3">
-            <form onSubmit={handleSearch}>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  autoFocus
-                  type="search"
-                  placeholder="Buscar películas y series..."
-                  className="pl-10 bg-secondary border-border focus:border-primary"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </form>
-          </div>
-          {/* Mobile inline results */}
-          {(searchQuery.trim().length > 0) && (
-            <div className="border-t border-border bg-background">
-              <div className="container mx-auto px-4 pb-3">
-                {loadingResults ? (
-                  <div className="py-3 text-sm text-muted-foreground">Buscando...</div>
-                ) : results.length === 0 ? (
-                  <div className="py-3 text-sm text-muted-foreground">Sin resultados.</div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 py-3">
-                    {results.map((r) => (
-                      <Link key={r.id} to={r.content_type === "series" ? `/series/${r.id}` : `/movie/${r.id}`} className="group">
-                        <div className="aspect-[2/3] w-full overflow-hidden rounded-lg border border-border bg-secondary">
-                          {r.image_url ? (
-                            <img src={r.image_url} alt={r.title} className="h-full w-full object-cover group-hover:opacity-90 transition" />
-                          ) : (
-                            <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">Sin imagen</div>
-                          )}
-                        </div>
-                        <div className="mt-1 text-xs line-clamp-2">{r.title}</div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
 
-      {/* Desktop inline results below header */}
-      {searchQuery.trim().length > 0 && (
-        <div className="hidden md:block border-t border-border bg-background/95">
-          <div className="container mx-auto px-4 py-3">
-            {loadingResults ? (
-              <div className="text-sm text-muted-foreground">Buscando...</div>
-            ) : results.length === 0 ? (
-              <div className="text-sm text-muted-foreground">Sin resultados.</div>
-            ) : (
-              <div className="grid grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
-                {results.map((r) => (
-                  <Link key={r.id} to={r.content_type === "series" ? `/series/${r.id}` : `/movie/${r.id}`} className="group">
-                    <div className="aspect-[2/3] w-full overflow-hidden rounded-lg border border-border bg-secondary">
-                      {r.image_url ? (
-                        <img src={r.image_url} alt={r.title} className="h-full w-full object-cover group-hover:opacity-90 transition" />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">Sin imagen</div>
-                      )}
-                    </div>
-                    <div className="mt-1 text-xs line-clamp-2">{r.title}</div>
-                  </Link>
-                ))}
-              </div>
-            )}
+      {/* Full-screen search overlay */}
+      {searchOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur">
+          <div className="absolute top-0 left-0 right-0 p-4 sm:p-6">
+            <div className="mx-auto max-w-3xl">
+              <form onSubmit={handleSearch}>
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    autoFocus
+                    type="search"
+                    placeholder="Buscar películas y series..."
+                    className="pl-12 h-12 rounded-xl bg-card border-border focus:border-primary"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    aria-label="Cerrar"
+                    onClick={() => setSearchOpen(false)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 hover:bg-secondary border border-transparent hover:border-border"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div className="absolute inset-x-0 top-20 sm:top-28 bottom-0 overflow-auto">
+            <div className="container mx-auto px-4 pb-8">
+              {searchQuery.trim().length === 0 ? (
+                <div className="text-center text-muted-foreground py-10">Empieza a escribir para ver resultados</div>
+              ) : loadingResults ? (
+                <div className="text-center text-muted-foreground py-10">Buscando...</div>
+              ) : results.length === 0 ? (
+                <div className="text-center text-muted-foreground py-10">Sin resultados.</div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {results.map((r) => (
+                    <Link
+                      key={r.id}
+                      to={r.content_type === "series" ? `/series/${r.id}` : `/movie/${r.id}`}
+                      className="group"
+                      onClick={() => setSearchOpen(false)}
+                    >
+                      <div className="aspect-[2/3] w-full overflow-hidden rounded-lg border border-border bg-secondary">
+                        {r.image_url ? (
+                          <img src={r.image_url} alt={r.title} className="h-full w-full object-cover group-hover:opacity-90 transition" />
+                        ) : (
+                          <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">Sin imagen</div>
+                        )}
+                      </div>
+                      <div className="mt-2 text-sm line-clamp-2">{r.title}</div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
