@@ -52,16 +52,24 @@ export const Header = () => {
     const run = async () => {
       setLoadingResults(true);
       try {
-        const { data, error } = await supabase
+        // First try prefix match (starts with)
+        let { data, error } = await supabase
           .from("content")
           .select("id,title,image_url,content_type,created_at")
-          .ilike("title", `%${q}%`)
-          .order("created_at", { ascending: false })
+          .ilike("title", `${q}%`)
+          .order("title", { ascending: true })
           .limit(24);
-        if (error) {
-          setResults([]);
-          return;
+        // If no prefix results, fallback to contains
+        if (!error && Array.isArray(data) && data.length === 0) {
+          const res2 = await supabase
+            .from("content")
+            .select("id,title,image_url,content_type,created_at")
+            .ilike("title", `%${q}%`)
+            .order("created_at", { ascending: false })
+            .limit(24);
+          if (!res2.error) data = res2.data as any[];
         }
+        if (error) { setResults([]); return; }
         if (!abort) setResults((data as any[]) || []);
       } finally {
         if (!abort) setLoadingResults(false);
@@ -79,6 +87,17 @@ export const Header = () => {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
+
+  // Lock body scroll when overlay is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    if (searchOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = prev || "";
+    }
+    return () => { document.body.style.overflow = prev || ""; };
+  }, [searchOpen]);
 
   return (
     <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-border">
@@ -143,7 +162,7 @@ export const Header = () => {
 
       {/* Full-screen search overlay */}
       {searchOpen && (
-        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur flex flex-col">
+        <div className="fixed inset-0 z-[60] bg-black flex flex-col">
           <div className="p-4 sm:p-6">
             <div className="mx-auto max-w-3xl">
               <form onSubmit={handleSearch}>
