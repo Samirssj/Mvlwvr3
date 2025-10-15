@@ -52,9 +52,24 @@ const Index = () => {
         .order("created_at", { ascending: false })
         .limit(12);
 
+      // Compute NEW for series based on recent episodes (last 10 days)
+      let seriesWithNew = seriesContent || [];
+      if (seriesContent && seriesContent.length > 0) {
+        const ids = seriesContent.map((s) => s.id);
+        const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: eps } = await supabase
+          .from("episodes")
+          .select("content_id, created_at")
+          .in("content_id", ids)
+          .gte("created_at", tenDaysAgo)
+          .limit(500);
+        const recentSet = new Set((eps || []).map((e: any) => e.content_id));
+        seriesWithNew = seriesContent.map((s) => ({ ...s, is_new: s.is_new || recentSet.has(s.id) }));
+      }
+
       setNewReleases(newContent || []);
       setMovies(movieContent || []);
-      setSeries(seriesContent || []);
+      setSeries(seriesWithNew);
     } finally {
       setLoading(false);
     }

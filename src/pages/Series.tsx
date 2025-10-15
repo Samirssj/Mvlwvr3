@@ -88,7 +88,7 @@ export default function Series() {
         .neq("id", content.id)
         .order("created_at", { ascending: false })
         .limit(18);
-      setSimilar(sim || []);
+      let similarItems = sim || [];
 
       // Tendencia: últimos vistos, deduplicado por content
       const { data: views } = await supabase
@@ -99,8 +99,26 @@ export default function Series() {
       const items = (views || [])
         .map((r: any) => r.content)
         .filter((c: any) => c && c.id && c.content_type === "series" && c.id !== content.id);
-      const unique = Array.from(new Map(items.map((c: any) => [c.id, c])).values()).slice(0, 18);
-      setTrending(unique);
+      let trendingItems = Array.from(new Map(items.map((c: any) => [c.id, c])).values()).slice(0, 18);
+
+      // Marcar como NUEVO si hubo episodios en últimos 10 días
+      const candidates = [...similarItems, ...trendingItems];
+      if (candidates.length > 0) {
+        const ids = Array.from(new Set(candidates.map((c: any) => c.id)));
+        const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: eps } = await supabase
+          .from("episodes")
+          .select("content_id, created_at")
+          .in("content_id", ids)
+          .gte("created_at", tenDaysAgo)
+          .limit(1000);
+        const recentSet = new Set((eps || []).map((e: any) => e.content_id));
+        similarItems = similarItems.map((s: any) => ({ ...s, is_new: s.is_new || recentSet.has(s.id) }));
+        trendingItems = trendingItems.map((s: any) => ({ ...s, is_new: s.is_new || recentSet.has(s.id) }));
+      }
+
+      setSimilar(similarItems);
+      setTrending(trendingItems);
     };
     run();
   }, [content]);
