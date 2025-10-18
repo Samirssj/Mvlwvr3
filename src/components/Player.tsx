@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Maximize2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/analytics";
 
 type PlayerProps = {
   embedUrl: string;
@@ -19,6 +20,12 @@ export default function Player({ embedUrl, contentId, episodeId }: PlayerProps) 
       setUserId(data.user?.id ?? null);
     });
   }, []);
+
+  // Analytics: register content play/view when component mounts or ids change
+  useEffect(() => {
+    if (!contentId) return;
+    trackEvent("content_play", { content_id: contentId, episode_id: episodeId || null });
+  }, [contentId, episodeId]);
 
   const goFullscreen = () => {
     const el = containerRef.current;

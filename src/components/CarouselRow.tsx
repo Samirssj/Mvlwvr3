@@ -1,4 +1,4 @@
-import { ReactNode, useRef } from "react";
+import { ReactNode, useRef, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -7,7 +7,7 @@ interface CarouselRowProps {
   children: ReactNode;
 }
 
-export function CarouselRow({ title, children }: CarouselRowProps) {
+export const CarouselRow = memo(function CarouselRow({ title, children }: CarouselRowProps) {
   const ref = useRef<HTMLDivElement>(null);
   const scrollBy = (delta: number) => {
     ref.current?.scrollBy({ left: delta, behavior: "smooth" });
@@ -48,4 +48,4 @@ export function CarouselRow({ title, children }: CarouselRowProps) {
       </div>
     </section>
   );
-}
+});

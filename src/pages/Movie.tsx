@@ -55,6 +55,25 @@ export default function Movie() {
     load();
   }, [id, navigate]);
 
+  // SEO: dynamic title and description
+  useEffect(() => {
+    if (!content) return;
+    const prevTitle = document.title;
+    const prevDesc = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+    document.title = `${content.title} | Mvlwvr3`;
+    const meta = document.querySelector('meta[name="description"]') || (() => {
+      const m = document.createElement('meta');
+      m.setAttribute('name', 'description');
+      document.head.appendChild(m);
+      return m;
+    })();
+    meta.setAttribute('content', content.description || 'Ver película en Mvlwvr3');
+    return () => {
+      document.title = prevTitle;
+      meta.setAttribute('content', prevDesc);
+    };
+  }, [content]);
+
   useEffect(() => {
     const loadAux = async () => {
       const { data: { user } } = await supabase.auth.getUser();

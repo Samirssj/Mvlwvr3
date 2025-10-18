@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import { Play, Clock, Crown, Heart } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/analytics";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -15,7 +16,7 @@ interface ContentCardProps {
   progress?: number;
 }
 
-export const ContentCard = ({
+export const ContentCard = memo(({
   id,
   title,
   imageUrl,
@@ -26,6 +27,28 @@ export const ContentCard = ({
 }: ContentCardProps) => {
   const [fav, setFav] = useState(false);
   const [loading, setLoading] = useState(false);
+  const href = `/${contentType}/${id}`;
+
+  const prefetch = () => {
+    try {
+      // Prefetch route navigation hint
+      const sel = `link[rel="prefetch"][href='${href}']`;
+      if (!document.head.querySelector(sel)) {
+        const l = document.createElement("link");
+        l.rel = "prefetch";
+        l.as = "document";
+        l.href = href;
+        document.head.appendChild(l);
+      }
+      // Prefetch image
+      if (imageUrl) {
+        const img = new Image();
+        img.decoding = "async";
+        img.loading = "eager";
+        img.src = imageUrl;
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -53,14 +76,20 @@ export const ContentCard = ({
       if (!user) return;
       if (!fav) {
         const { error } = await (supabase as any).from("favorites").insert({ user_id: user.id, content_id: id });
-        if (!error) setFav(true);
+        if (!error) {
+          setFav(true);
+          trackEvent("favorite_toggle", { content_id: id, is_favorite: true });
+        }
       } else {
         const { error } = await (supabase as any)
           .from("favorites")
           .delete()
           .eq("content_id", id)
           .eq("user_id", user.id);
-        if (!error) setFav(false);
+        if (!error) {
+          setFav(false);
+          trackEvent("favorite_toggle", { content_id: id, is_favorite: false });
+        }
       }
     } finally {
       setLoading(false);
@@ -69,8 +98,10 @@ export const ContentCard = ({
 
   return (
     <Link
-      to={`/${contentType}/${id}`}
+      to={href}
       className="group relative block overflow-hidden rounded-xl bg-card border border-border hover:border-primary transition-all duration-300"
+      onMouseEnter={prefetch}
+      onFocus={prefetch}
     >
       <div className="aspect-[2/3] relative overflow-hidden">
         {imageUrl ? (
@@ -79,6 +110,8 @@ export const ContentCard = ({
             alt={title}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
+            decoding="async"
+            sizes="(max-width: 640px) 45vw, (max-width: 768px) 30vw, (max-width: 1024px) 22vw, 16vw"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
@@ -149,4 +182,4 @@ export const ContentCard = ({
       </div>
     </Link>
   );
-};
+});

@@ -79,6 +79,25 @@ export default function Series() {
 
   useEffect(() => {
     if (!content) return;
+    // SEO: dynamic title and description
+    const prevTitle = document.title;
+    const prevDesc = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+    document.title = `${content.title} | Mvlwvr3`;
+    const meta = document.querySelector('meta[name="description"]') || (() => {
+      const m = document.createElement('meta');
+      m.setAttribute('name', 'description');
+      document.head.appendChild(m);
+      return m;
+    })();
+    meta.setAttribute('content', content.description || 'Ver serie en Mvlwvr3');
+    return () => {
+      document.title = prevTitle;
+      meta.setAttribute('content', prevDesc);
+    };
+  }, [content]);
+
+  useEffect(() => {
+    if (!content) return;
     const run = async () => {
       // Similares: mismo tipo, recientes, excluye el actual
       const { data: sim } = await supabase
