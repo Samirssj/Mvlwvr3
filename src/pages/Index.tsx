@@ -100,7 +100,7 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden pt-16">
         <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_hsl(226_100%_50%_/_0.1)_0%,_transparent_65%)]" />
+        <div className="absolute inset-0 radial-accent-bg" />
         
         <div className="container mx-auto px-4 relative z-10 text-center">
           <div className="max-w-3xl mx-auto space-y-6">

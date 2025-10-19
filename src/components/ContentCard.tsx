@@ -8,18 +8,22 @@ import { Badge } from "@/components/ui/badge";
 
 interface ContentCardProps {
   id: string;
+  title?: string;
   imageUrl?: string;
   contentType: "movie" | "series";
   isPremium: boolean;
   isNew: boolean;
+  progress?: number;
 }
 
 export const ContentCard = memo(({
   id,
+  title,
   imageUrl,
   contentType,
   isPremium,
   isNew,
+  progress,
 }: ContentCardProps) => {
   const [fav, setFav] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -96,6 +100,7 @@ export const ContentCard = memo(({
     <Link
       to={href}
       className="group relative block overflow-hidden rounded-xl bg-card border border-border hover:border-primary transition-all duration-300"
+      aria-label={title || undefined}
       onMouseEnter={prefetch}
       onFocus={prefetch}
     >
@@ -103,7 +108,7 @@ export const ContentCard = memo(({
         {imageUrl ? (
           <img
             src={imageUrl}
-            alt="Movie Poster"
+            alt={title || "Poster"}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
             loading="lazy"
             decoding="async"
@@ -111,7 +116,7 @@ export const ContentCard = memo(({
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
-            <Play className="h-16 w-16 text-muted-foreground" />
+            <Play className="h-16 w-16 text-muted-foreground" aria-hidden="true" />
           </div>
         )}
 

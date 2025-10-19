@@ -2,8 +2,14 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import { initAnalytics } from "./analytics";
 import "./index.css";
+import { applySeasonTheme, getSeasonTheme } from "./lib/theme";
 
 initAnalytics();
+// Apply saved seasonal theme (default/halloween/christmas/newyear)
+try {
+  const saved = getSeasonTheme();
+  applySeasonTheme(saved);
+} catch {}
 createRoot(document.getElementById("root")!).render(<App />);
 
 // Register Service Worker

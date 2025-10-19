@@ -16,6 +16,7 @@ import Catalogo from "./pages/Catalogo"; // + añadido
 import Search from "./pages/Search"; // + añadido
 import Admin from "./pages/Admin"; // + añadido
 import { FirstVisitNotice } from "@/components/FirstVisitNotice"; // + añadido
+import SeasonalDecor from "@/components/SeasonalDecor";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <SeasonalDecor />
         <FirstVisitNotice />
         <Routes>
           <Route path="/" element={<Index />} />

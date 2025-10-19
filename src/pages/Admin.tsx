@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { Loader2, Shield, Plus, Trash2, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { applySeasonTheme, getSeasonTheme, type SeasonTheme } from "@/lib/theme";
 
 // Tipos mínimos
 interface ContentItem {
@@ -39,6 +40,7 @@ export default function Admin() {
 
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<ContentItem[]>([]);
+  const [seasonTheme, setSeasonTheme] = useState<SeasonTheme>("default");
 
   // Formulario de contenido
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -94,6 +96,12 @@ export default function Admin() {
     };
     check();
   }, [navigate]);
+
+  useEffect(() => {
+    try {
+      setSeasonTheme(getSeasonTheme());
+    } catch {}
+  }, []);
 
   const resetForm = () => {
     setEditingId(null);
@@ -252,6 +260,31 @@ export default function Admin() {
           <Shield className="h-5 w-5 text-primary" />
           <h1 className="text-2xl font-bold">Panel de Administración</h1>
         </div>
+
+        <Card className="p-6 bg-card border-border space-y-4">
+          <h2 className="text-lg font-semibold">Tema estacional</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div className="md:col-span-2">
+              <Label>Tema</Label>
+              <Select value={seasonTheme} onValueChange={(v) => setSeasonTheme(v as SeasonTheme)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Selecciona un tema" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Predeterminado</SelectItem>
+                  <SelectItem value="halloween">Halloween</SelectItem>
+                  <SelectItem value="christmas">Navidad</SelectItem>
+                  <SelectItem value="newyear">Año Nuevo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Button onClick={() => { try { applySeasonTheme(seasonTheme); toast({ title: "Tema actualizado" }); } catch {} }} className="bg-primary hover:bg-primary/90 glow-effect w-full">
+                Aplicar tema
+              </Button>
+            </div>
+          </div>
+        </Card>
 
         {/* Formulario de Contenido */}
         <Card className="p-6 bg-card border-border space-y-4">

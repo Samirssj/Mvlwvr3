@@ -54,8 +54,8 @@ export default {
         'gradient-dark': 'var(--gradient-dark)',
       },
       boxShadow: {
-        'glow': 'var(--glow-blue)',
-        'glow-strong': 'var(--glow-blue-strong)',
+        'glow': 'var(--glow-primary)',
+        'glow-strong': 'var(--glow-primary-strong)',
       },
       borderRadius: {
         lg: "var(--radius)",
