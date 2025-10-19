@@ -112,9 +112,47 @@ All colors MUST be HSL.
     100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
   }
 
+  /* Slide horizontally across the container */
+  @keyframes slideX {
+    0% { transform: translateX(-20%); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateX(120%); opacity: 0; }
+  }
+
+  /* Subtle flicker for spooky effects */
+  @keyframes flicker {
+    0%, 100% { opacity: 0.85; filter: drop-shadow(0 0 2px hsl(var(--primary) / 0.3)); }
+    50% { opacity: 1; filter: drop-shadow(0 0 6px hsl(var(--primary) / 0.6)); }
+  }
+
+  /* Fireworks burst (scale + fade) */
+  @keyframes fireworksBurst {
+    0% { transform: scale(0.2); opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { transform: scale(1.2); opacity: 0; }
+  }
+
+  /* Twinkle for ornaments/sparkles */
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
   .float-anim { animation: floatY 8s linear infinite; }
   .snow-anim { animation: fallY 10s linear infinite; }
   .confetti-anim { animation: confettiY 8s linear infinite; }
+  .slide-x { animation: slideX 10s linear infinite; }
+  .flicker-slow { animation: flicker 2.6s ease-in-out infinite; }
+  .firework { animation: fireworksBurst 1.6s ease-out infinite; }
+  .twinkle { animation: twinkle 2s ease-in-out infinite; }
+
+  /* Snow bank utility for bottom edge */
+  .snow-bank {
+    background: linear-gradient(to top, hsl(0 0% 100% / 0.9), hsl(0 0% 100% / 0.0));
+    box-shadow: 0 -10px 30px hsl(0 0% 100% / 0.15) inset;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

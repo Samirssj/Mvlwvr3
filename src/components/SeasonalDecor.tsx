@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { getSeasonTheme, type SeasonTheme } from "@/lib/theme";
 
 function useSeason(): SeasonTheme {
@@ -29,6 +30,7 @@ function randomItems(count: number, seed: number) {
 
 export function SeasonalDecor() {
   const theme = useSeason();
+  const { pathname } = useLocation();
   const bats = useMemo(() => randomItems(10, 13), []);
   const snow = useMemo(() => randomItems(24, 37), []);
   const confetti = useMemo(() => randomItems(30, 71), []);
@@ -37,8 +39,11 @@ export function SeasonalDecor() {
     return null;
   }
 
+  // Only render on home page
+  if (pathname !== "/") return null;
+
   return (
-    <div className="pointer-events-none fixed inset-0 z-30">
+    <div className="pointer-events-none fixed z-30 overflow-hidden" style={{ top: 0, left: 0, width: "100vw", height: "50vh" }}>
       {theme === "halloween" && (
         <div className="absolute inset-0">
           {bats.map((b) => (

@@ -279,7 +279,17 @@ export default function Admin() {
               </Select>
             </div>
             <div>
-              <Button onClick={() => { try { applySeasonTheme(seasonTheme); toast({ title: "Tema actualizado" }); } catch {} }} className="bg-primary hover:bg-primary/90 glow-effect w-full">
+              <Button onClick={async () => {
+                try {
+                  applySeasonTheme(seasonTheme);
+                  // Persist globally to Supabase for multi-device sync
+                  try {
+                    const sb: any = supabase as any;
+                    await sb.from("app_settings").upsert({ key: "season_theme", value: seasonTheme }, { onConflict: "key" });
+                  } catch {}
+                  toast({ title: "Tema actualizado" });
+                } catch {}
+              }} className="bg-primary hover:bg-primary/90 glow-effect w-full">
                 Aplicar tema
               </Button>
             </div>
