@@ -17,6 +17,8 @@ import Search from "./pages/Search"; // + añadido
 import Admin from "./pages/Admin"; // + añadido
 import { FirstVisitNotice } from "@/components/FirstVisitNotice"; // + añadido
 import SeasonalDecor from "@/components/SeasonalDecor";
+import WatchSeries from "./pages/WatchSeries";
+import WatchMovie from "./pages/WatchMovie";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +46,10 @@ const App = () => (
           {/* Aliases en español como pide el prompt */}
           <Route path="/pelicula/:id" element={<Movie />} />
           <Route path="/serie/:id" element={<Series />} />
+
+          {/* Páginas de reproducción */}
+          <Route path="/watch/series/:id" element={<WatchSeries />} />
+          <Route path="/watch/movie/:id" element={<WatchMovie />} />
 
           {/* Checkout */}
           <Route path="/checkout" element={<Checkout />} />

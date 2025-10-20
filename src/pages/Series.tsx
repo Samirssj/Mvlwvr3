@@ -8,6 +8,7 @@ import Player from "@/components/Player";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Crown, Sparkles, Play } from "lucide-react";
 
@@ -31,6 +32,9 @@ type Episode = {
   season_number: number;
   title: string | null;
   embed_url: string;
+  thumbnail_url?: string | null;
+  still_url?: string | null;
+  preview_url?: string | null;
   created_at?: string | null;
 };
 
@@ -43,6 +47,8 @@ export default function Series() {
   const [current, setCurrent] = useState<Episode | null>(null);
   const [similar, setSimilar] = useState<any[]>([]);
   const [trending, setTrending] = useState<any[]>([]);
+  const [selectedSeason, setSelectedSeason] = useState<number | null>(null);
+  const [showPlayer, setShowPlayer] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -66,8 +72,10 @@ export default function Series() {
         if (eErr) throw eErr;
 
         setContent(contentData as Content);
-        setEpisodes((epsData as Episode[]) || []);
-        setCurrent((epsData && epsData[0]) || null);
+        const eps = (epsData as Episode[]) || [];
+        setEpisodes(eps);
+        setCurrent((eps && eps[0]) || null);
+        if (eps && eps.length > 0) setSelectedSeason(eps[0].season_number);
       } catch {
         navigate("/");
       } finally {
@@ -151,6 +159,37 @@ export default function Series() {
     return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
   }, [episodes]);
 
+  const seasons = useMemo(() => grouped.map(([s]) => s), [grouped]);
+  const filteredEpisodes = useMemo(() => {
+    if (!selectedSeason) return [] as Episode[];
+    const found = grouped.find(([s]) => s === selectedSeason);
+    return (found?.[1] || []).slice();
+  }, [grouped, selectedSeason]);
+
+  // Al cambiar de temporada, autoseleccionar primer episodio de esa temporada
+  useEffect(() => {
+    if (filteredEpisodes.length > 0) {
+      setCurrent((prev) => (prev && prev.season_number === filteredEpisodes[0].season_number ? prev : filteredEpisodes[0]));
+    }
+  }, [selectedSeason]);
+
+  const metaInfo = useMemo(() => {
+    const year = content?.release_date ? new Date(content.release_date).getFullYear() : undefined;
+    const genres = (content?.metadata?.genres as string[] | undefined) || (content?.metadata?.genre ? [content.metadata.genre] : []);
+    const seasonsCount = seasons.length;
+    return { year, genres, seasonsCount };
+  }, [content, seasons]);
+
+  const [inMyList, setInMyList] = useState(false);
+  const toggleMyList = () => setInMyList((v) => !v);
+
+  const formatDate = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -164,95 +203,211 @@ export default function Series() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 pt-24 pb-12 max-w-6xl space-y-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            {content.is_new && (
-              <Badge className="bg-primary text-primary-foreground">
-                <Sparkles className="h-3 w-3 mr-1" /> Nuevo
-              </Badge>
-            )}
-            {content.is_premium && (
-              <Badge variant="secondary">
-                <Crown className="h-3 w-3 mr-1" /> Premium
-              </Badge>
-            )}
-            {/* Badges de novedades (últimos 10 días) */}
-            {(() => {
-              const now = Date.now();
-              const recent = episodes.some((ep) => ep.created_at && (now - new Date(ep.created_at).getTime()) <= 10 * 24 * 60 * 60 * 1000);
-              let newSeason = false;
-              if (episodes.length > 0) {
-                const seasons = Array.from(new Set(episodes.map((e) => e.season_number))).sort((a, b) => a - b);
-                const latest = seasons[seasons.length - 1];
-                const latestRecent = episodes.some((e) => e.season_number === latest && e.created_at && (now - new Date(e.created_at).getTime()) <= 10 * 24 * 60 * 60 * 1000);
-                newSeason = latestRecent && seasons.length > 1;
-              }
-              return (
+
+      {/* Hero estilo Disney+: fondo con imagen y panel en esquina */}
+      <section className="relative h-[55vh] min-h-[420px] w-full overflow-hidden">
+        {((content as any)?.metadata?.hero_image_url || content.image_url) && (
+          <img
+            src={(content as any)?.metadata?.hero_image_url || content.image_url}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+            decoding="async"
+          />
+        )}
+        {/* Overlays suaves para contraste sin perder nitidez */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/10 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-transparent" />
+        <div className="container mx-auto px-4 h-full max-w-6xl relative">
+          <div className="absolute bottom-6 left-4 md:left-6 w-[92%] md:w-[60%] space-y-3">
+            <div className="flex items-center gap-2">
+              {content.is_new && (
+                <Badge className="bg-primary text-primary-foreground">
+                  <Sparkles className="h-3 w-3 mr-1" /> Nuevo
+                </Badge>
+              )}
+              {content.is_premium && (
+                <Badge variant="secondary">
+                  <Crown className="h-3 w-3 mr-1" /> Premium
+                </Badge>
+              )}
+              {/* Badges de novedades (últimos 10 días) */}
+              {(() => {
+                const now = Date.now();
+                const recent = episodes.some((ep) => ep.created_at && (now - new Date(ep.created_at).getTime()) <= 10 * 24 * 60 * 60 * 1000);
+                let newSeason = false;
+                if (episodes.length > 0) {
+                  const seasons = Array.from(new Set(episodes.map((e) => e.season_number))).sort((a, b) => a - b);
+                  const latest = seasons[seasons.length - 1];
+                  const latestRecent = episodes.some((e) => e.season_number === latest && e.created_at && (now - new Date(e.created_at).getTime()) <= 10 * 24 * 60 * 60 * 1000);
+                  newSeason = latestRecent && seasons.length > 1;
+                }
+                return (
+                  <>
+                    {recent && (
+                      <Badge className="bg-green-600/90 text-white">
+                        <Sparkles className="h-3 w-3 mr-1" /> Nuevos episodios
+                      </Badge>
+                    )}
+                    {newSeason && (
+                      <Badge className="bg-blue-600/90 text-white">
+                        <Sparkles className="h-3 w-3 mr-1" /> Nueva temporada
+                      </Badge>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+            <h1 className="text-3xl md:text-5xl font-bold leading-tight">{content.title}</h1>
+            <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-muted-foreground">
+              {metaInfo.genres && metaInfo.genres.length > 0 && (
+                <span>{metaInfo.genres.slice(0, 2).join(' · ')}</span>
+              )}
+              {metaInfo.year && (
                 <>
-                  {recent && (
-                    <Badge className="bg-green-600/90 text-white">
-                      <Sparkles className="h-3 w-3 mr-1" /> Nuevos episodios
-                    </Badge>
-                  )}
-                  {newSeason && (
-                    <Badge className="bg-blue-600/90 text-white">
-                      <Sparkles className="h-3 w-3 mr-1" /> Nueva temporada
-                    </Badge>
-                  )}
+                  <span>·</span>
+                  <span>{metaInfo.year}</span>
                 </>
-              );
-            })()}
+              )}
+              {metaInfo.seasonsCount > 0 && (
+                <>
+                  <span>·</span>
+                  <span>{metaInfo.seasonsCount} {metaInfo.seasonsCount === 1 ? 'temporada' : 'temporadas'}</span>
+                </>
+              )}
+            </div>
+            {content.description && (
+              <p className="text-sm md:text-base text-muted-foreground line-clamp-4 md:line-clamp-5 max-w-prose">
+                {content.description}
+              </p>
+            )}
+            <div className="flex items-center gap-3">
+              <Button
+                size="lg"
+                className="bg-primary hover:bg-primary/90 glow-effect"
+                onClick={() => {
+                  if (episodes.length > 0) {
+                    const first = episodes[0];
+                    navigate(`/watch/series/${content.id}?ep=${first.id}`);
+                  } else {
+                    navigate(`/watch/series/${content.id}`);
+                  }
+                }}
+              >
+                VER AHORA
+              </Button>
+              <Button variant="secondary" size="lg" onClick={toggleMyList}>
+                {inMyList ? 'EN MI LISTA' : 'MI LISTA'}
+              </Button>
+            </div>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold">{content.title}</h1>
+        </div>
+      </section>
+
+      <div className="container mx-auto px-4 pb-12 max-w-6xl space-y-6">
+        <div id="series-player">
+          {showPlayer && (
+            current ? (
+              <Player
+                embedUrl={current.embed_url}
+                contentId={content.id}
+                episodeId={current.id}
+              />
+            ) : (
+              <Card className="p-4 bg-card border-border">
+                <p className="text-sm text-muted-foreground">
+                  No hay episodios disponibles para esta serie.
+                </p>
+              </Card>
+            )
+          )}
         </div>
 
-        {current ? (
-          <Player
-            embedUrl={current.embed_url}
-            contentId={content.id}
-            episodeId={current.id}
-          />
-        ) : (
-          <Card className="p-4 bg-card border-border">
-            <p className="text-sm text-muted-foreground">
-              No hay episodios disponibles para esta serie.
-            </p>
-          </Card>
-        )}
-
-        {content.description && (
-          <Card className="p-4 bg-card border-border">
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-              {content.description}
-            </p>
-          </Card>
-        )}
-
+        {/* Episodios completos + selector de temporada inline */}
         <div className="space-y-3">
-          {grouped.map(([season, eps]) => (
-            <Card key={season} className="p-4 bg-card border-border">
-              <h3 className="font-semibold mb-3">Temporada {season}</h3>
-              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {eps.map((ep) => (
-                  <Button
-                    key={ep.id}
-                    variant={current?.id === ep.id ? "default" : "outline"}
-                    className={
-                      current?.id === ep.id
-                        ? "justify-start glow-effect"
-                        : "justify-start"
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg md:text-xl font-semibold">Episodios completos</h2>
+              <span className="text-xs md:text-sm text-muted-foreground">{filteredEpisodes.length} episodio{filteredEpisodes.length === 1 ? '' : 's'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Temporada</span>
+              <Select
+                value={(selectedSeason ?? (seasons[0] ?? 1)).toString()}
+                onValueChange={(v) => setSelectedSeason(parseInt(v))}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Selecciona temporada" />
+                </SelectTrigger>
+                <SelectContent>
+                  {seasons.map((s) => (
+                    <SelectItem key={s} value={s.toString()}>Temporada {s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {filteredEpisodes.map((ep) => (
+              <Card key={ep.id} className={`overflow-hidden bg-card border-border transition-transform duration-200 hover:scale-[1.02] ${current?.id === ep.id ? 'ring-1 ring-primary/60' : ''}`}>
+                <button
+                  className="w-full text-left group"
+                  onClick={() => {
+                    navigate(`/watch/series/${content.id}?ep=${ep.id}`);
+                  }}
+                  onMouseEnter={(e) => {
+                    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+                    const v = e.currentTarget.querySelector('video') as HTMLVideoElement | null;
+                    if (v) {
+                      v.currentTime = 0;
+                      v.play().catch(() => {});
                     }
-                    onClick={() => setCurrent(ep)}
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Ep {ep.episode_number}
-                    {ep.title ? `: ${ep.title}` : ""}
-                  </Button>
-                ))}
-              </div>
-            </Card>
-          ))}
+                  }}
+                  onMouseLeave={(e) => {
+                    const v = e.currentTarget.querySelector('video') as HTMLVideoElement | null;
+                    if (v) {
+                      v.pause();
+                      v.currentTime = 0;
+                    }
+                  }}
+                >
+                  <div className="aspect-video w-full bg-muted overflow-hidden relative">
+                    {ep.preview_url ? (
+                      <video
+                        src={ep.preview_url}
+                        muted
+                        playsInline
+                        loop
+                        preload="metadata"
+                        poster={ep.thumbnail_url || ep.still_url || undefined}
+                        className="w-full h-full object-cover transition-opacity duration-300"
+                      />
+                    ) : ep.thumbnail_url || ep.still_url ? (
+                      <img src={(ep.thumbnail_url || ep.still_url) as string} alt={`Ep ${ep.episode_number}`} className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <Play className="h-8 w-8" />
+                      </div>
+                    )}
+                    {/* Hover play overlay */}
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
+                      <Play className="h-8 w-8 text-white drop-shadow" />
+                    </div>
+                    {current?.id === ep.id && (
+                      <div className="absolute inset-0 flex items-start pointer-events-none">
+                        <span className="m-2 px-2 py-0.5 text-[10px] uppercase tracking-wide bg-primary text-primary-foreground rounded">Reproduciendo</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3 space-y-1">
+                    <div className="text-sm font-semibold truncate">T{ep.season_number} E{ep.episode_number} {ep.title ? `· ${ep.title}` : ''}</div>
+                    <div className="text-xs text-muted-foreground">{formatDate(ep.created_at)}</div>
+                  </div>
+                </button>
+              </Card>
+            ))}
+          </div>
         </div>
 
         {/* Recomendaciones: Similares */}

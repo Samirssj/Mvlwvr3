@@ -54,6 +54,7 @@ export default function Admin() {
   const [releaseDate, setReleaseDate] = useState("");
   const [categories, setCategories] = useState("");
   const [metadata, setMetadata] = useState("{\n  \"year\": 2025,\n  \"duration\": 120,\n  \"actors\": []\n}");
+  const [heroImageUrl, setHeroImageUrl] = useState("");
 
   // Generador de episodios
   const [seriesId, setSeriesId] = useState("");
@@ -115,6 +116,7 @@ export default function Admin() {
     setReleaseDate("");
     setCategories("");
     setMetadata("{\n  \"year\": 2025\n}");
+    setHeroImageUrl("");
   };
 
   const loadList = async () => {
@@ -141,6 +143,11 @@ export default function Admin() {
       }
       let meta: ContentInsert["metadata"] = {} as any;
       try { meta = (metadata ? JSON.parse(metadata) : {}) as any; } catch { meta = {} as any; }
+      if (heroImageUrl.trim()) {
+        (meta as any).hero_image_url = heroImageUrl.trim();
+      } else if (meta && (meta as any).hero_image_url) {
+        delete (meta as any).hero_image_url;
+      }
 
       const insertPayload: ContentInsert = {
         title: title.trim(),
@@ -188,6 +195,9 @@ export default function Admin() {
     setReleaseDate(row.release_date || "");
     setCategories((row.categories || []).join(", "));
     setMetadata(JSON.stringify(row.metadata || {}, null, 2));
+    try {
+      setHeroImageUrl((row.metadata && row.metadata.hero_image_url) ? String(row.metadata.hero_image_url) : "");
+    } catch { setHeroImageUrl(""); }
   };
 
   const deleteRow = async (id: string) => {
@@ -307,6 +317,11 @@ export default function Admin() {
             <div>
               <Label>Imagen (URL)</Label>
               <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." />
+            </div>
+            <div className="md:col-span-2">
+              <Label>Portada (wide) URL para héroe</Label>
+              <Input value={heroImageUrl} onChange={(e) => setHeroImageUrl(e.target.value)} placeholder="https://... (1920x800 recomendado)" />
+              <p className="text-xs text-muted-foreground mt-1">Se guarda en <code>metadata.hero_image_url</code>. Usada como fondo del héroe de series/películas.</p>
             </div>
             <div className="md:col-span-2">
               <Label>Descripción</Label>

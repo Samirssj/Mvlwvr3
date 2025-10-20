@@ -13,6 +13,8 @@ export const Header = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [loadingResults, setLoadingResults] = useState(false);
   const [results, setResults] = useState<Array<{ id: string; title: string; image_url: string | null; content_type: "movie" | "series" }>>([]);
+  const [isHidden, setIsHidden] = useState(false);
+  const [lastY, setLastY] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -89,8 +91,33 @@ export const Header = () => {
     return () => { document.body.style.overflow = prev || ""; };
   }, [searchOpen]);
 
+  // Hide on scroll down, show on scroll up
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const y = window.scrollY || window.pageYOffset;
+        const delta = y - lastY;
+        const threshold = 8; // sensibilidad
+        if (y < 64) {
+          setIsHidden(false);
+        } else if (delta > threshold) {
+          setIsHidden(true);
+        } else if (delta < -threshold) {
+          setIsHidden(false);
+        }
+        setLastY(y);
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll as any);
+  }, [lastY]);
+
   return (
-    <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+    <header className={`fixed top-0 w-full z-50 bg-transparent border-none shadow-none transition-transform duration-300 will-change-transform ${isHidden ? '-translate-y-full' : 'translate-y-0'}`}>
       <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
         <Link to="/" className="flex items-center gap-2">
           <div className="text-2xl font-bold bg-gradient-electric bg-clip-text text-transparent">
