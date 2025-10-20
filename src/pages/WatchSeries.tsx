@@ -35,6 +35,21 @@ export default function WatchSeries() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [current, setCurrent] = useState<Episode | null>(null);
 
+  const cleanTitle = (title: string | null | undefined, ep: Episode): string => {
+    const raw = (title || '').trim();
+    if (!raw) return `E${ep.episode_number}`;
+    const patterns: RegExp[] = [
+      /^T\s*\d+\s*E\s*\d+\s*[·:,-]?\s*/i,
+      /^S\s*\d+\s*E\s*\d+\s*[·:,-]?\s*/i,
+      /^Episodio\s*\d+\s*[·:,-]?\s*/i,
+      /^E\s*\d+\s*[·:,-]?\s*/i,
+    ];
+    let out = raw;
+    for (const rx of patterns) out = out.replace(rx, '');
+    out = out.trim();
+    return out || `E${ep.episode_number}`;
+  };
+
   const buildPreviewSrc = (raw: string): string => {
     try {
       const u = new URL(raw);
@@ -205,11 +220,11 @@ export default function WatchSeries() {
                   onMouseEnter={(e) => {
                     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
                     const v = e.currentTarget.querySelector('video') as HTMLVideoElement | null;
-                    if (v) { v.currentTime = 0; v.controls = true; v.play().catch(() => {}); }
+                    if (v) { v.currentTime = 0; v.play().catch(() => {}); }
                   }}
                   onMouseLeave={(e) => {
                     const v = e.currentTarget.querySelector('video') as HTMLVideoElement | null;
-                    if (v) { v.pause(); v.currentTime = 0; v.controls = false; }
+                    if (v) { v.pause(); v.currentTime = 0; }
                   }}
                 >
                   <div className="aspect-video w-full bg-muted overflow-hidden relative">
@@ -220,6 +235,9 @@ export default function WatchSeries() {
                         playsInline
                         loop
                         preload="metadata"
+                        controls={false}
+                        controlsList="nodownload noplaybackrate noremoteplayback nofullscreen"
+                        disablePictureInPicture
                         poster={ep.thumbnail_url || ep.still_url || undefined}
                         className="w-full h-full object-cover transition-opacity duration-300"
                       />
@@ -240,35 +258,18 @@ export default function WatchSeries() {
                         <Play className="h-8 w-8" />
                       </div>
                     )}
-                    {/* Center big play button */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="h-12 w-12 md:h-14 md:w-14 rounded-full bg-black/40 backdrop-blur-sm grid place-items-center scale-95 opacity-80 group-hover:scale-100 group-hover:opacity-100 transition-all duration-200">
-                        <Play className="h-6 w-6 md:h-7 md:w-7 text-white" />
-                      </div>
-                    </div>
-                    {/* Dim overlay on hover */}
-                    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
-                    {/* Persistent bottom info bar */}
-                    <div className="absolute bottom-0 left-0 right-0">
-                      <div className="bg-gradient-to-t from-black/60 to-transparent pt-10" />
-                      <div className="px-3 py-2 flex items-center justify-between">
-                        <div className="text-[13px] font-semibold text-white truncate">
-                          T{ep.season_number} E{ep.episode_number} {ep.title ? `· ${ep.title}` : ''}
-                        </div>
-                      </div>
-                      {/* Faux progress bar on hover */}
-                      <div className="h-1 bg-white/15">
-                        <div className="h-full bg-primary/90 w-0 group-hover:w-2/3 transition-all duration-500" />
-                      </div>
-                    </div>
                     {current?.id === ep.id && (
                       <div className="absolute inset-0 flex items-start pointer-events-none">
                         <span className="m-2 px-2 py-0.5 text-[10px] uppercase tracking-wide bg-primary text-primary-foreground rounded">Reproduciendo</span>
                       </div>
                     )}
                   </div>
-                  <div className="p-3 pt-2">
-                    <div className="text-xs text-muted-foreground">{new Date(ep.created_at || '').toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                  <div className="p-3 space-y-1">
+                    <div className="text-sm font-semibold truncate">{cleanTitle(ep.title, ep)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(ep.created_at || '').toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {` · T${ep.season_number} E${ep.episode_number}`}
+                    </div>
                   </div>
                 </button>
               </Card>

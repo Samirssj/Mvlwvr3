@@ -12,6 +12,49 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Crown, Sparkles, Play } from "lucide-react";
 
+const cleanTitle = (title: string | null | undefined, ep: { episode_number: number }): string => {
+  const raw = (title || '').trim();
+  if (!raw) return `E${ep.episode_number}`;
+  const patterns: RegExp[] = [
+    /^T\s*\d+\s*E\s*\d+\s*[·:,-]?\s*/i,
+    /^S\s*\d+\s*E\s*\d+\s*[·:,-]?\s*/i,
+    /^Episodio\s*\d+\s*[·:,-]?\s*/i,
+    /^E\s*\d+\s*[·:,-]?\s*/i,
+  ];
+  let out = raw;
+  for (const rx of patterns) out = out.replace(rx, '');
+  out = out.trim();
+  return out || `E${ep.episode_number}`;
+};
+
+const buildPreviewSrc = (raw: string): string => {
+  try {
+    const u = new URL(raw);
+    const host = u.hostname.toLowerCase();
+    if (host.includes("youtube.com") || host.includes("youtu.be")) {
+      let id = "";
+      if (host.includes("youtu.be")) id = u.pathname.replace("/", "");
+      if (host.includes("watch")) id = u.searchParams.get("v") || "";
+      if (!id && u.pathname.includes("/embed/")) id = u.pathname.split("/embed/")[1] || "";
+      const params = new URLSearchParams({ autoplay: "1", mute: "1", controls: "0", playsinline: "1" });
+      return `https://www.youtube.com/embed/${id}?${params.toString()}`;
+    }
+    if (host.includes("vimeo.com")) {
+      const idMatch = raw.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+      const id = idMatch?.[1] || "";
+      const params = new URLSearchParams({ autoplay: "1", muted: "1", title: "0", byline: "0", portrait: "0" });
+      return `https://player.vimeo.com/video/${id}?${params.toString()}`;
+    }
+    const params = u.searchParams;
+    if (!params.has("autoplay")) params.set("autoplay", "1");
+    if (!params.has("mute")) params.set("mute", "1");
+    u.search = params.toString();
+    return u.toString();
+  } catch {
+    return raw;
+  }
+};
+
 type Content = {
   id: string;
   title: string;
@@ -380,20 +423,27 @@ export default function Series() {
                         playsInline
                         loop
                         preload="metadata"
+                        controls={false}
+                        controlsList="nodownload noplaybackrate noremoteplayback nofullscreen"
+                        disablePictureInPicture
                         poster={ep.thumbnail_url || ep.still_url || undefined}
                         className="w-full h-full object-cover transition-opacity duration-300"
+                      />
+                    ) : ep.embed_url ? (
+                      <iframe
+                        src={buildPreviewSrc(ep.embed_url)}
+                        className="absolute inset-0 w-full h-full"
+                        loading="lazy"
+                        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        allowFullScreen
+                        title={`Ep ${ep.episode_number}`}
                       />
                     ) : ep.thumbnail_url || ep.still_url ? (
                       <img src={(ep.thumbnail_url || ep.still_url) as string} alt={`Ep ${ep.episode_number}`} className="w-full h-full object-cover" loading="lazy" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                        <Play className="h-8 w-8" />
-                      </div>
+                      <div className="w-full h-full bg-muted" />
                     )}
-                    {/* Hover play overlay */}
-                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
-                      <Play className="h-8 w-8 text-white drop-shadow" />
-                    </div>
                     {current?.id === ep.id && (
                       <div className="absolute inset-0 flex items-start pointer-events-none">
                         <span className="m-2 px-2 py-0.5 text-[10px] uppercase tracking-wide bg-primary text-primary-foreground rounded">Reproduciendo</span>
@@ -401,8 +451,8 @@ export default function Series() {
                     )}
                   </div>
                   <div className="p-3 space-y-1">
-                    <div className="text-sm font-semibold truncate">T{ep.season_number} E{ep.episode_number} {ep.title ? `· ${ep.title}` : ''}</div>
-                    <div className="text-xs text-muted-foreground">{formatDate(ep.created_at)}</div>
+                    <div className="text-sm font-semibold truncate">{ep.title ? ep.title : `E${ep.episode_number}`}</div>
+                    <div className="text-xs text-muted-foreground">{formatDate(ep.created_at)} {`· T${ep.season_number} E${ep.episode_number}`}</div>
                   </div>
                 </button>
               </Card>
