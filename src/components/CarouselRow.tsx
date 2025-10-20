@@ -5,19 +5,22 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface CarouselRowProps {
   title: string;
   children: ReactNode;
+  hideHeader?: boolean;
 }
 
-export const CarouselRow = memo(function CarouselRow({ title, children }: CarouselRowProps) {
+export const CarouselRow = memo(function CarouselRow({ title, children, hideHeader }: CarouselRowProps) {
   const ref = useRef<HTMLDivElement>(null);
   const scrollBy = (delta: number) => {
     ref.current?.scrollBy({ left: delta, behavior: "smooth" });
   };
   return (
     <section className="relative">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="h-6 w-1 bg-primary rounded-full" />
-        <h2 className="text-xl font-bold">{title}</h2>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center gap-2 mb-4">
+          <div className="h-6 w-1 bg-primary rounded-full" />
+          <h2 className="text-xl font-bold">{title}</h2>
+        </div>
+      )}
       <div className="relative">
         <div
           ref={ref}
