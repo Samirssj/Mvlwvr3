@@ -17,8 +17,8 @@ import Search from "./pages/Search"; // + añadido
 import Admin from "./pages/Admin"; // + añadido
 import { FirstVisitNotice } from "@/components/FirstVisitNotice"; // + añadido
 import SeasonalDecor from "@/components/SeasonalDecor";
-import WatchSeries from "./pages/WatchSeries";
-import WatchMovie from "./pages/WatchMovie";
+import WatchSeries from "./pages/WatchSeries.tsx";
+import WatchMovie from "./pages/WatchMovie.tsx";
 
 const queryClient = new QueryClient();
 

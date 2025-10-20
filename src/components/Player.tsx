@@ -87,24 +87,8 @@ export default function Player({ embedUrl, contentId, episodeId }: PlayerProps) 
           loading="lazy"
           title="Player"
         />
-        <div className="absolute top-2 right-2 z-10">
-          <Button
-            type="button"
-            size="icon"
-            variant="secondary"
-            className="hover:bg-secondary/80"
-            onClick={goFullscreen}
-            aria-label="Pantalla completa"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
 
-      <p className="mt-2 text-xs text-muted-foreground">
-        Controles como play/pausa y volumen dependen del reproductor embebido. Para soporte
-        completo de controles, el proveedor debe exponer una API (p. ej., postMessage).
-      </p>
     </div>
   );
 }
