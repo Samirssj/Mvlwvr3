@@ -19,6 +19,8 @@ import { FirstVisitNotice } from "@/components/FirstVisitNotice"; // + añadido
 import SeasonalDecor from "@/components/SeasonalDecor";
 import WatchSeries from "./pages/WatchSeries.tsx";
 import WatchMovie from "./pages/WatchMovie.tsx";
+import Privacy from "./pages/Privacy";
+import DeleteData from "./pages/DeleteData";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +41,8 @@ const App = () => (
           <Route path="/catalogo" element={<Catalogo />} />
           <Route path="/search" element={<Search />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/delete-data" element={<DeleteData />} />
 
           {/* Rutas de detalle */}
           <Route path="/movie/:id" element={<Movie />} />
