@@ -52,4 +52,4 @@ This project is built with:
 
 Yes, you can!
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain, Puedes usar vercel ta que tiene su version de paga donde te permite tener un dominio personalizado
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain, Puedes usar vercel ya que tiene su version de paga donde te permite tener un dominio personalizado
