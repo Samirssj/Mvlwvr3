@@ -51,7 +51,7 @@ export function FirstVisitNotice() {
               </h3>
               {isMobile ? (
                 <p className="text-sm leading-relaxed" style={{ color: "#0040ff" }}>
-                  Las películas son tridas de un servidos externo que con tiene anuncios te recomiendo hacer esto en tu movil, Ve a tus ajustes y busca DNS privado en la opcion que permite escribir segun el movil que tengas escribes esto (<span className="font-semibold" style={{ color: "#ff1a1a" }}>dns.adguard.com</span>) y sales esto bloqueara los anuncios en general de tu movil
+                  Las películas son traídas de un servidos externo que con tiene anuncios te recomiendo hacer esto en tu movil, Ve a tus ajustes y busca DNS privado en la opcion que permite escribir segun el movil que tengas escribes esto (<span className="font-semibold" style={{ color: "#ff1a1a" }}>dns.adguard.com</span>) y sales esto bloqueara los anuncios en general de tu movil
                 </p>
               ) : (
                 <p className="text-sm leading-relaxed" style={{ color: "#0040ff" }}>
