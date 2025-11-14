@@ -4,13 +4,11 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
-import { SearchBar } from "@/components/SearchBar"; // Import the new SearchBar
+import { SearchBar } from "@/components/SearchBar"; // Import SearchBar
 
 export const Header = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
-  const [isHidden, setIsHidden] = useState(false);
-  const [lastY, setLastY] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -24,52 +22,25 @@ export const Header = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Hide on scroll down, show on scroll up
-  useEffect(() => {
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const y = window.scrollY || window.pageYOffset;
-        const delta = y - lastY;
-        const threshold = 8; // sensibilidad
-        if (y < 64) {
-          setIsHidden(false);
-        } else if (delta > threshold) {
-          setIsHidden(true);
-        } else if (delta < -threshold) {
-          setIsHidden(false);
-        }
-        setLastY(y);
-        ticking = false;
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll as any);
-  }, [lastY]);
-
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/");
   };
 
   return (
-    <header className={`fixed top-0 w-full z-50 bg-transparent border-none shadow-none transition-transform duration-300 will-change-transform ${isHidden ? '-translate-y-full' : 'translate-y-0'}`}>
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <Link to="/" className="flex items-center gap-2">
+    <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-sm border-b border-border/20">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-2 sm:gap-4">
+        <Link to="/" className="hidden sm:flex items-center gap-2">
           <div className="text-2xl font-bold bg-gradient-electric bg-clip-text text-transparent">
             Mvlwvr3
           </div>
         </Link>
         
-        {/* Centered SearchBar */}
-        <div className="flex-1 flex justify-center px-4">
+        <div className="flex-1 flex justify-center px-0 sm:px-4">
           <SearchBar />
         </div>
 
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-1 sm:gap-2">
           {session ? (
             <>
               <Button
@@ -94,13 +65,13 @@ export const Header = () => {
               <Button
                 variant="ghost"
                 onClick={() => navigate("/auth")}
-                className="hover:bg-secondary"
+                className="hover:bg-secondary text-xs sm:text-sm px-2 sm:px-4"
               >
                 Iniciar sesión
               </Button>
               <Button
                 onClick={() => navigate("/auth?mode=signup")}
-                className="bg-primary hover:bg-primary/90 glow-effect"
+                className="bg-primary hover:bg-primary/90 glow-effect text-xs sm:text-sm px-2 sm:px-4"
               >
                 Registrarse
               </Button>
