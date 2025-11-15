@@ -18,14 +18,14 @@ export const Header: React.FC = () => {
 
         <div className="flex-shrink-0 flex items-center gap-2">
           <Link 
-            to="/login"
+            to="/auth"
             className="px-3 py-1.5 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-md whitespace-nowrap"
           >
             Iniciar Sesión
           </Link>
 
           <Link
-            to="/register"
+            to="/auth?mode=signup"
             className="px-3 py-1.5 text-sm font-medium bg-primary hover:bg-primary/90 text-white rounded-md whitespace-nowrap glow-effect"
           >
             Regístrate
