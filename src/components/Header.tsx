@@ -1,84 +1,37 @@
-import { Link, useNavigate } from "react-router-dom";
-import { User, LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
-import { Session } from "@supabase/supabase-js";
-import { SearchBar } from "@/components/SearchBar"; // Import SearchBar
+// src/components/Header.tsx
+import { Link } from "react-router-dom";
+import SearchBar from "./SearchBar";
 
-export const Header = () => {
-  const navigate = useNavigate();
-  const [session, setSession] = useState<Session | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-  };
-
+export const Header: React.FC = () => {
   return (
-    <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-sm border-b border-border/20">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-2 sm:gap-4">
-        <Link to="/" className="hidden sm:flex items-center gap-2">
-          <div className="text-2xl font-bold bg-gradient-electric bg-clip-text text-transparent">
-            Mvlwvr3
-          </div>
-        </Link>
-        
-        <div className="flex-1 flex justify-center px-0 sm:px-4">
+    <div className="sticky top-0 z-50 flex justify-center py-2 px-2 sm:px-4 lg:px-6">
+      <header className="w-full max-w-screen-2xl mx-auto flex items-center justify-between gap-4 py-1.5 px-2 bg-black/95 backdrop-blur-lg border border-white/5 rounded-lg shadow-2xl">
+
+        <div className="flex-shrink-0">
+          <span className="hidden sm:block text-lg font-bold text-white pl-2">Mvlwvr3</span>
+        </div>
+
+        <div className="flex-1 flex justify-center px-2 sm:px-4">
           <SearchBar />
         </div>
 
-        <nav className="flex items-center gap-1 sm:gap-2">
-          {session ? (
-            <>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/profile")}
-                className="hover:bg-secondary hover:text-primary"
-              >
-                <User className="h-5 w-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleLogout}
-                className="hover:bg-secondary hover:text-destructive"
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="ghost"
-                onClick={() => navigate("/auth")}
-                className="hover:bg-secondary text-xs sm:text-sm px-2 sm:px-4"
-              >
-                Iniciar sesión
-              </Button>
-              <Button
-                onClick={() => navigate("/auth?mode=signup")}
-                className="bg-primary hover:bg-primary/90 glow-effect text-xs sm:text-sm px-2 sm:px-4"
-              >
-                Registrarse
-              </Button>
-            </>
-          )}
-        </nav>
-      </div>
-    </header>
+        <div className="flex-shrink-0 flex items-center gap-2">
+          <Link 
+            to="/login"
+            className="px-3 py-1.5 text-sm font-medium text-gray-300 hover:text-white transition-colors rounded-md whitespace-nowrap"
+          >
+            Iniciar Sesión
+          </Link>
+
+          <Link
+            to="/register"
+            className="px-3 py-1.5 text-sm font-medium bg-primary hover:bg-primary/90 text-white rounded-md whitespace-nowrap glow-effect"
+          >
+            Regístrate
+          </Link>
+        </div>
+
+      </header>
+    </div>
   );
 };
