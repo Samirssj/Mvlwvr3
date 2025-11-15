@@ -3,11 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
-
 import Logo from "./Logo";
 import SearchBar from "./SearchBar";
 import { Button } from "@/components/ui/button";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, UserPlus } from "lucide-react";
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -39,7 +38,7 @@ export const Header: React.FC = () => {
       <header className="w-full max-w-screen-2xl mx-auto flex items-center justify-between gap-4 py-1.5 px-2 bg-black/95 backdrop-blur-lg border border-white/5 rounded-lg shadow-2xl">
 
         {/* LOGO */}
-        <Link to="/" className="flex items-center">
+        <Link to="/" className="hidden sm:flex items-center">
           <Logo />
         </Link>
 
@@ -78,16 +77,29 @@ export const Header: React.FC = () => {
               <Button
                 variant="ghost"
                 onClick={() => navigate("/auth")}
-                className="text-gray-300 hover:text-white"
+                className="text-gray-300 hover:text-white hidden sm:flex"
               >
                 Iniciar Sesión
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => navigate("/auth")}
+                className="text-gray-300 hover:text-white flex sm:hidden"
+              >
+                <User className="h-5 w-5" />
               </Button>
 
               <Button
                 onClick={() => navigate("/auth?mode=signup")}
-                className="bg-primary hover:bg-primary/90 text-white glow-effect"
+                className="bg-primary hover:bg-primary/90 text-white glow-effect hidden sm:flex"
               >
                 Regístrate
+              </Button>
+              <Button
+                onClick={() => navigate("/auth?mode=signup")}
+                className="bg-primary hover:bg-primary/90 text-white glow-effect flex sm:hidden"
+              >
+                <UserPlus className="h-5 w-5" />
               </Button>
             </>
           )}
