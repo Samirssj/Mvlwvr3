@@ -20,7 +20,11 @@ const Index = () => {
   const navigate = useNavigate();
   const [newReleases, setNewReleases] = useState<Content[]>([]);
   const [movies, setMovies] = useState<Content[]>([]);
+  const [moreMovies, setMoreMovies] = useState<Content[]>([]);
   const [series, setSeries] = useState<Content[]>([]);
+  const [moreSeries, setMoreSeries] = useState<Content[]>([]);
+  const [actionMovies, setActionMovies] = useState<Content[]>([]);
+  const [comedySeries, setComedySeries] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
   const [continueWatching, setContinueWatching] = useState<any[]>([]);
 
@@ -31,6 +35,7 @@ const Index = () => {
 
   const loadContent = async () => {
     try {
+      // Cargar estrenos
       const { data: newContent } = await supabase
         .from("content")
         .select("*")
@@ -38,22 +43,60 @@ const Index = () => {
         .order("created_at", { ascending: false })
         .limit(6);
 
+      // Cargar películas populares (primera página)
       const { data: movieContent } = await supabase
         .from("content")
         .select("*")
         .eq("content_type", "movie")
         .order("created_at", { ascending: false })
-        .limit(12);
+        .range(0, 11); // Primera página: 0-11 (12 películas)
 
+      // Cargar más películas populares (segunda página)
+      const { data: moreMovieContent } = await supabase
+        .from("content")
+        .select("*")
+        .eq("content_type", "movie")
+        .order("created_at", { ascending: false })
+        .range(12, 23); // Segunda página: 12-23 (12 películas más)
+
+      // Cargar series destacadas (primera página)
       const { data: seriesContent } = await supabase
         .from("content")
         .select("*")
+        .eq("content_type", "series")
+        .order("created_at", { ascending: false })
+        .range(0, 11); // Primera página: 0-11 (12 series)
+
+      // Cargar más series destacadas (segunda página)
+      const { data: moreSeriesContent } = await supabase
+        .from("content")
+        .select("*")
+        .eq("content_type", "series")
+        .order("created_at", { ascending: false })
+        .range(12, 23); // Segunda página: 12-23 (12 series más)
+
+      // Cargar películas de acción
+      const { data: actionMoviesData } = await supabase
+        .from("content")
+        .select("*")
+        .contains("genres", ["Acción"])
+        .eq("content_type", "movie")
+        .order("created_at", { ascending: false })
+        .limit(12);
+
+      // Cargar series de comedia
+      const { data: comedySeriesData } = await supabase
+        .from("content")
+        .select("*")
+        .contains("genres", ["Comedia"])
         .eq("content_type", "series")
         .order("created_at", { ascending: false })
         .limit(12);
 
       // Compute NEW for series based on recent episodes (last 10 days)
       let seriesWithNew = seriesContent || [];
+      let comedySeriesWithNew = comedySeriesData || [];
+      
       if (seriesContent && seriesContent.length > 0) {
         const ids = seriesContent.map((s) => s.id);
         const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
@@ -66,10 +109,28 @@ const Index = () => {
         const recentSet = new Set((eps || []).map((e: any) => e.content_id));
         seriesWithNew = seriesContent.map((s) => ({ ...s, is_new: s.is_new || recentSet.has(s.id) }));
       }
+      
+      // Aplicar la misma lógica para las series de comedia
+      if (comedySeriesData && comedySeriesData.length > 0) {
+        const ids = comedySeriesData.map((s: any) => s.id);
+        const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+        const { data: eps } = await supabase
+          .from("episodes")
+          .select("content_id, created_at")
+          .in("content_id", ids)
+          .gte("created_at", tenDaysAgo)
+          .limit(500);
+        const recentSet = new Set((eps || []).map((e: any) => e.content_id));
+        comedySeriesWithNew = comedySeriesData.map((s: any) => ({ ...s, is_new: s.is_new || recentSet.has(s.id) }));
+      }
 
       setNewReleases(newContent || []);
       setMovies(movieContent || []);
+      setMoreMovies(moreMovieContent || []);
       setSeries(seriesWithNew);
+      setMoreSeries(moreSeriesContent || []);
+      setActionMovies(actionMoviesData || []);
+      setComedySeries(comedySeriesWithNew);
     } finally {
       setLoading(false);
     }
@@ -175,7 +236,7 @@ const Index = () => {
           </CarouselRow>
         )}
 
-        {/* Películas */}
+        {/* Películas Populares - Primera Fila */}
         {movies.length > 0 && (
           <CarouselRow title="Películas Populares">
             {movies.map((content) => (
@@ -193,9 +254,29 @@ const Index = () => {
           </CarouselRow>
         )}
 
-        {/* Series */}
+        {/* Más Películas Populares - Segunda Fila */}
+        {moreMovies.length > 0 && (
+          <div className="mt-2">
+            <CarouselRow title="">
+              {moreMovies.map((content) => (
+                <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
+                  <ContentCard
+                    id={content.id}
+                    title={content.title}
+                    imageUrl={content.image_url || undefined}
+                    contentType={content.content_type}
+                    isPremium={content.is_premium}
+                    isNew={content.is_new}
+                  />
+                </div>
+              ))}
+            </CarouselRow>
+          </div>
+        )}
+
+        {/* Series Destacadas - Primera Fila */}
         {series.length > 0 && (
-          <CarouselRow title="Series Destacadas">
+          <CarouselRow title="Series">
             {series.map((content) => (
               <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
                 <ContentCard
@@ -211,7 +292,63 @@ const Index = () => {
           </CarouselRow>
         )}
 
-        {!loading && newReleases.length === 0 && movies.length === 0 && series.length === 0 && (
+        {/* Más Series Destacadas - Segunda Fila */}
+        {/*{moreSeries.length > 0 && (
+          <div className="mt-2">
+            <CarouselRow title="Más Series Destacadas">
+              {moreSeries.map((content) => (
+                <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
+                  <ContentCard
+                    id={content.id}
+                    title={content.title}
+                    imageUrl={content.image_url || undefined}
+                    contentType={content.content_type}
+                    isPremium={content.is_premium}
+                    isNew={content.is_new}
+                  />
+                </div>
+              ))}
+            </CarouselRow>
+          </div>
+        )}*/}
+
+        {/* Películas de Acción */}
+        {/*{actionMovies.length > 0 && (
+          <CarouselRow title="Películas de Acción">
+            {actionMovies.map((content) => (
+              <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
+                <ContentCard
+                  id={content.id}
+                  title={content.title}
+                  imageUrl={content.image_url || undefined}
+                  contentType={content.content_type}
+                  isPremium={content.is_premium}
+                  isNew={content.is_new}
+                />
+              </div>
+            ))}
+          </CarouselRow>
+        )}*/}
+
+        {/* Series de Comedia */}
+        {/*{comedySeries.length > 0 && (
+          <CarouselRow title="Series de Comedia">
+            {comedySeries.map((content) => (
+              <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
+                <ContentCard
+                  id={content.id}
+                  title={content.title}
+                  imageUrl={content.image_url || undefined}
+                  contentType={content.content_type}
+                  isPremium={content.is_premium}
+                  isNew={content.is_new}
+                />
+              </div>
+            ))}
+          </CarouselRow>
+        )}*/}
+
+        {!loading && newReleases.length === 0 && movies.length === 0 && moreMovies.length === 0 && series.length === 0 && moreSeries.length === 0 && actionMovies.length === 0 && comedySeries.length === 0 && (
           <div className="text-center py-20">
             <p className="text-muted-foreground text-lg">
               No hay contenido disponible aún. ¡Vuelve pronto!

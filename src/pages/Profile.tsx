@@ -112,6 +112,10 @@ export default function Profile() {
   }
 
   const isPremium = subscription?.plan === "premium" && subscription?.is_active;
+  const userMeta: any = (session as any)?.user?.user_metadata || {};
+  const displayName = profile?.full_name || userMeta.full_name || userMeta.name || (session as any)?.user?.email?.split("@")[0] || "Usuario";
+  const avatarUrl = profile?.avatar_url || userMeta.avatar_url || userMeta.picture || null;
+  const emailStr = profile?.email || (session as any)?.user?.email || "";
 
   return (
     <div className="min-h-screen bg-background">
@@ -121,12 +125,16 @@ export default function Profile() {
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
-            <div className="h-20 w-20 rounded-full bg-gradient-electric flex items-center justify-center glow-effect">
-              <User className="h-10 w-10 text-white" />
-            </div>
+            {avatarUrl ? (
+              <img src={String(avatarUrl)} alt="avatar" className="h-20 w-20 rounded-full object-cover border border-border" />
+            ) : (
+              <div className="h-20 w-20 rounded-full bg-gradient-electric flex items-center justify-center glow-effect">
+                <User className="h-10 w-10 text-white" />
+              </div>
+            )}
             <div>
-              <h1 className="text-3xl font-bold">{profile?.full_name || "Usuario"}</h1>
-              <p className="text-muted-foreground">{profile?.email}</p>
+              <h1 className="text-3xl font-bold">{displayName}</h1>
+              <p className="text-muted-foreground">{emailStr}</p>
             </div>
           </div>
 
