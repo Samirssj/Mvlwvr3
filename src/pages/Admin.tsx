@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { Loader2, Shield, Plus, Trash2, Save } from "lucide-react";
+import { Loader2, Shield, Plus, Trash2, Save, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { applySeasonTheme, getSeasonTheme, type SeasonTheme } from "@/lib/theme";
+import { AdminSearchBar } from "@/components/admin/AdminSearchBar";
 
 // Tipos mínimos
 interface ContentItem {
@@ -60,6 +61,47 @@ export default function Admin() {
   const [seriesId, setSeriesId] = useState("");
   const [season, setSeason] = useState(1);
   const [episodesText, setEpisodesText] = useState("");
+
+  // Función para buscar y cargar un elemento por ID
+  const loadItemById = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("content")
+        .select("*")
+        .eq("id", id)
+        .single();
+      
+      if (error) throw error;
+      if (data) {
+        editRow(data);
+        // Desplazarse al formulario
+        document.getElementById('content-form')?.scrollIntoView({ behavior: 'smooth' });
+      }
+    } catch (error) {
+      console.error("Error loading item:", error);
+      toast({ variant: "destructive", title: "Error", description: "No se pudo cargar el contenido" });
+    }
+  };
+
+  // Función para manejar la eliminación desde el buscador
+  const handleDeleteItem = async (id: string) => {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este contenido?")) {
+      try {
+        const { error } = await supabase
+          .from("content")
+          .delete()
+          .eq("id", id);
+        
+        if (error) throw error;
+        
+        toast({ title: "Contenido eliminado correctamente" });
+        await loadList();
+      } catch (error) {
+        console.error("Error deleting item:", error);
+        toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar el contenido" });
+      }
+    }
+  };
 
   // Verificación de rol admin
   useEffect(() => {
@@ -265,12 +307,19 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 pt-24 pb-12 space-y-8 max-w-6xl">
-        <div className="flex items-center gap-2">
-          <Shield className="h-5 w-5 text-primary" />
-          <h1 className="text-2xl font-bold">Panel de Administración</h1>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+            <Shield className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+            Panel de Administración
+          </h1>
+          <div className="w-full md:w-1/2">
+            <AdminSearchBar 
+              onEdit={loadItemById} 
+              onDelete={handleDeleteItem} 
+            />
+          </div>
         </div>
-
         <Card className="p-6 bg-card border-border space-y-4">
           <h2 className="text-lg font-semibold">Tema estacional</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
