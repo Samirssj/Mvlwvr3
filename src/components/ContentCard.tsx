@@ -13,6 +13,7 @@ interface ContentCardProps {
   contentType: "movie" | "series";
   isPremium: boolean;
   isNew: boolean;
+  newLabel?: string;
   progress?: number;
 }
 
@@ -23,6 +24,7 @@ export const ContentCard = memo(({
   contentType,
   isPremium,
   isNew,
+  newLabel,
   progress,
 }: ContentCardProps) => {
   const [fav, setFav] = useState(false);
@@ -124,7 +126,7 @@ export const ContentCard = memo(({
         <div className="absolute top-2 left-2 flex gap-2">
           {isNew && (
             <Badge className="bg-primary text-primary-foreground border-0 glow-effect">
-              NUEVO
+              {newLabel || 'NUEVO'}
             </Badge>
           )}
           {isPremium && (

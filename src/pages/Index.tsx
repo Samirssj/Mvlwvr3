@@ -27,6 +27,7 @@ const Index = () => {
   const [comedySeries, setComedySeries] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
   const [continueWatching, setContinueWatching] = useState<any[]>([]);
+  const [recentlyAdded, setRecentlyAdded] = useState<Content[]>([]);
 
   useEffect(() => {
     loadContent();
@@ -35,13 +36,24 @@ const Index = () => {
 
   const loadContent = async () => {
     try {
-      // Cargar estrenos
+      // Cargar estrenos (contenido marcado como nuevo)
       const { data: newContent } = await supabase
         .from("content")
         .select("*")
         .eq("is_new", true)
         .order("created_at", { ascending: false })
         .limit(6);
+        
+      // Cargar contenido recién añadido (últimos 15 días, máximo 12 elementos)
+      const fifteenDaysAgo = new Date();
+      fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+      
+      const { data: recentlyAdded } = await supabase
+        .from("content")
+        .select("*")
+        .gte('created_at', fifteenDaysAgo.toISOString())
+        .order("created_at", { ascending: false })
+        .limit(12);
 
       // Cargar películas populares (primera página)
       const { data: movieContent } = await supabase
@@ -125,6 +137,7 @@ const Index = () => {
       }
 
       setNewReleases(newContent || []);
+      setRecentlyAdded(recentlyAdded || []);
       setMovies(movieContent || []);
       setMoreMovies(moreMovieContent || []);
       setSeries(seriesWithNew);
@@ -218,6 +231,25 @@ const Index = () => {
           </CarouselRow>
         )}
 
+        {/* Recién Añadido */}
+        {recentlyAdded.length > 0 && (
+          <CarouselRow title="Recién Añadido">
+            {recentlyAdded.map((content) => (
+              <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
+                <ContentCard
+                  id={content.id}
+                  title={content.title}
+                  imageUrl={content.image_url || undefined}
+                  contentType={content.content_type}
+                  isPremium={content.is_premium}
+                  isNew={true}
+                  newLabel="RECIÉN AÑADIDO"
+                />
+              </div>
+            ))}
+          </CarouselRow>
+        )}
+
         {/* Estrenos */}
         {newReleases.length > 0 && (
           <CarouselRow title="Estrenos">
@@ -230,12 +262,12 @@ const Index = () => {
                   contentType={content.content_type}
                   isPremium={content.is_premium}
                   isNew={content.is_new}
+                  newLabel="NUEVO"
                 />
               </div>
             ))}
           </CarouselRow>
         )}
-
         {/* Películas Populares - Primera Fila */}
         {movies.length > 0 && (
           <CarouselRow title="Películas Populares">
