@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Play, TrendingUp, Film, Tv } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import HeroCarousel from "@/components/HeroCarousel";
 
 interface Content {
   id: string;
@@ -167,51 +168,24 @@ const Index = () => {
     } catch {}
   };
 
+  // Mapear recentlyAdded (Content[]) al formato Item[] que espera HeroCarousel
+  const heroItems = recentlyAdded.map((c) => ({
+    id: c.id,
+    titulo: c.title,                     // mapear title -> titulo
+    descripcion: (c as any).description || "", // si tu tabla tiene 'description', úsala; si no, string vacío
+    portada: c.image_url || "/poster-placeholder.png", // image_url -> portada
+    tipo: c.content_type                  // content_type -> tipo
+  }));
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Hero Section */}
-      <section id="hero-stage" className="relative h-[70vh] min-h-[500px] flex items-center justify-center overflow-hidden pt-16">
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background" />
-        <div className="absolute inset-0 radial-accent-bg" />
-        
-        <div className="container mx-auto px-4 relative z-10 text-center">
-          <div className="max-w-3xl mx-auto space-y-6">
-            <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-              <span className="bg-gradient-electric bg-clip-text text-transparent">
-                Películas y Series
-              </span>
-              <br />
-              <span className="text-foreground">Sin Límites</span>
-            </h1>
-            <p className="text-xl text-muted-foreground">
-              Disfruta de miles de títulos en streaming. Nuevo contenido cada semana.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-lg glow-effect"
-                onClick={() => navigate("/auth?mode=signup")}
-              >
-                <Play className="mr-2 h-5 w-5 fill-current" />
-                Comienza Gratis
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-lg border-primary text-primary hover:bg-primary/10"
-                onClick={() => navigate("/plans")}
-              >
-                <TrendingUp className="mr-2 h-5 w-5" />
-                Ver Planes
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* NUEVO HERO CAROUSEL */}
+      <HeroCarousel items={heroItems}/>
 
       <div className="container mx-auto px-4 py-12 space-y-12">
+
         {/* Continuar viendo */}
         {continueWatching.length > 0 && (
           <CarouselRow title="Continuar viendo">
@@ -231,7 +205,7 @@ const Index = () => {
           </CarouselRow>
         )}
 
-        {/* Recién Añadido */}
+        {/* Recién añadido */}
         {recentlyAdded.length > 0 && (
           <CarouselRow title="Recién Añadido">
             {recentlyAdded.map((content) => (
@@ -268,7 +242,8 @@ const Index = () => {
             ))}
           </CarouselRow>
         )}
-        {/* Películas Populares - Primera Fila */}
+
+        {/* Películas */}
         {movies.length > 0 && (
           <CarouselRow title="Películas Populares">
             {movies.map((content) => (
@@ -286,7 +261,7 @@ const Index = () => {
           </CarouselRow>
         )}
 
-        {/* Más Películas Populares - Segunda Fila */}
+        {/* Más Películas */}
         {moreMovies.length > 0 && (
           <div className="mt-2">
             <CarouselRow title="">
@@ -306,7 +281,7 @@ const Index = () => {
           </div>
         )}
 
-        {/* Series Destacadas - Primera Fila */}
+        {/* Series */}
         {series.length > 0 && (
           <CarouselRow title="Series">
             {series.map((content) => (
@@ -324,69 +299,20 @@ const Index = () => {
           </CarouselRow>
         )}
 
-        {/* Más Series Destacadas - Segunda Fila */}
-        {/*{moreSeries.length > 0 && (
-          <div className="mt-2">
-            <CarouselRow title="Más Series Destacadas">
-              {moreSeries.map((content) => (
-                <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
-                  <ContentCard
-                    id={content.id}
-                    title={content.title}
-                    imageUrl={content.image_url || undefined}
-                    contentType={content.content_type}
-                    isPremium={content.is_premium}
-                    isNew={content.is_new}
-                  />
-                </div>
-              ))}
-            </CarouselRow>
-          </div>
-        )}*/}
-
-        {/* Películas de Acción */}
-        {/*{actionMovies.length > 0 && (
-          <CarouselRow title="Películas de Acción">
-            {actionMovies.map((content) => (
-              <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
-                <ContentCard
-                  id={content.id}
-                  title={content.title}
-                  imageUrl={content.image_url || undefined}
-                  contentType={content.content_type}
-                  isPremium={content.is_premium}
-                  isNew={content.is_new}
-                />
-              </div>
-            ))}
-          </CarouselRow>
-        )}*/}
-
-        {/* Series de Comedia */}
-        {/*{comedySeries.length > 0 && (
-          <CarouselRow title="Series de Comedia">
-            {comedySeries.map((content) => (
-              <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
-                <ContentCard
-                  id={content.id}
-                  title={content.title}
-                  imageUrl={content.image_url || undefined}
-                  contentType={content.content_type}
-                  isPremium={content.is_premium}
-                  isNew={content.is_new}
-                />
-              </div>
-            ))}
-          </CarouselRow>
-        )}*/}
-
-        {!loading && newReleases.length === 0 && movies.length === 0 && moreMovies.length === 0 && series.length === 0 && moreSeries.length === 0 && actionMovies.length === 0 && comedySeries.length === 0 && (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground text-lg">
-              No hay contenido disponible aún. ¡Vuelve pronto!
-            </p>
-          </div>
-        )}
+        {!loading &&
+          newReleases.length === 0 &&
+          movies.length === 0 &&
+          moreMovies.length === 0 &&
+          series.length === 0 &&
+          moreSeries.length === 0 &&
+          actionMovies.length === 0 &&
+          comedySeries.length === 0 && (
+            <div className="text-center py-20">
+              <p className="text-muted-foreground text-lg">
+                No hay contenido disponible aún. ¡Vuelve pronto!
+              </p>
+            </div>
+          )}
       </div>
 
       {/* Footer */}
