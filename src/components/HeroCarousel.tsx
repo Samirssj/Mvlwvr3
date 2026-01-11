@@ -7,7 +7,8 @@ interface Item {
 	id: string;
 	titulo: string;
 	descripcion: string;
-	portada: string; // URL de la portada
+	portada: string; // URL de la portada normal
+	portadaWide?: string; // URL de la portada wide para desktop
 	tipo: string;
 }
 

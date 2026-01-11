@@ -7,6 +7,7 @@ interface SlideItem {
 	titulo: string;
 	descripcion: string;
 	portada: string;
+	portadaWide?: string;
 	tipo: string;
 }
 
@@ -23,11 +24,21 @@ const CarouselSlide: React.FC<CarouselSlideProps> = ({ item, active }) => {
                 ${active ? "opacity-100 z-10" : "opacity-0 z-0"}
             `}
 		>
-			{/* Imagen de fondo */}
-			<div
-				className="w-full h-full bg-cover bg-center"
-				style={{ backgroundImage: `url(${item.portada})` }}
-			/>
+			{/* Imagen de fondo con responsive */}
+			<div className="relative w-full h-full">
+				{/* Imagen para desktop (oculta en móvil) */}
+				{item.portadaWide && (
+					<div
+						className="hidden md:block w-full h-full bg-cover bg-center"
+						style={{ backgroundImage: `url(${item.portadaWide})` }}
+					/>
+				)}
+				{/* Imagen para móvil (visible solo en móvil o si no hay portadaWide) */}
+				<div
+					className={`w-full h-full bg-cover bg-center ${item.portadaWide ? 'md:hidden' : ''}`}
+					style={{ backgroundImage: `url(${item.portada})` }}
+				/>
+			</div>
 
 			{/* Overlay oscuro */}
 			<div className="absolute inset-0 bg-black/50" />

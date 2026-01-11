@@ -174,6 +174,7 @@ const Index = () => {
     titulo: c.title,                     // mapear title -> titulo
     descripcion: (c as any).description || "", // si tu tabla tiene 'description', úsala; si no, string vacío
     portada: c.image_url || "/poster-placeholder.png", // image_url -> portada
+    portadaWide: (c as any).metadata?.hero_image_url || undefined, // metadata.hero_image_url -> portadaWide
     tipo: c.content_type                  // content_type -> tipo
   }));
 
