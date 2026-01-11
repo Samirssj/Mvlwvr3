@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense, lazy } from "react";
 import { Header } from "@/components/Header";
 import { ContentCard } from "@/components/ContentCard";
 import { CarouselRow } from "@/components/CarouselRow";
@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Play, TrendingUp, Film, Tv } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import HeroCarousel from "@/components/HeroCarousel";
+import { ContentSkeleton, CarouselSkeleton } from "@/components/ContentSkeleton";
+import { FirstVisitNotice } from "@/components/FirstVisitNotice";
+import SeasonalDecor from "@/components/SeasonalDecor";
+
+const HeroCarousel = lazy(() => import("@/components/HeroCarousel"));
 
 interface Content {
   id: string;
@@ -49,7 +53,7 @@ const Index = () => {
       const fifteenDaysAgo = new Date();
       fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
       
-      const { data: recentlyAdded } = await supabase
+      const { data: recentlyAddedData } = await supabase
         .from("content")
         .select("*")
         .gte('created_at', fifteenDaysAgo.toISOString())
@@ -138,7 +142,7 @@ const Index = () => {
       }
 
       setNewReleases(newContent || []);
-      setRecentlyAdded(recentlyAdded || []);
+      setRecentlyAdded(recentlyAddedData || []);
       setMovies(movieContent || []);
       setMoreMovies(moreMovieContent || []);
       setSeries(seriesWithNew);
@@ -169,7 +173,7 @@ const Index = () => {
   };
 
   // Mapear recentlyAdded (Content[]) al formato Item[] que espera HeroCarousel
-  const heroItems = recentlyAdded.map((c) => ({
+  const heroItems = (recentlyAdded || []).map((c) => ({
     id: c.id,
     titulo: c.title,                     // mapear title -> titulo
     descripcion: (c as any).description || "", // si tu tabla tiene 'description', úsala; si no, string vacío
@@ -183,12 +187,16 @@ const Index = () => {
       <Header />
 
       {/* NUEVO HERO CAROUSEL */}
-      <HeroCarousel items={heroItems}/>
+      <Suspense fallback={
+        <div className="relative w-full h-[70vh] overflow-hidden rounded-xl bg-gradient-to-br from-muted to-secondary animate-pulse" />
+      }>
+        <HeroCarousel items={heroItems}/>
+      </Suspense>
 
       <div className="container mx-auto px-4 py-12 space-y-12">
 
         {/* Continuar viendo */}
-        {continueWatching.length > 0 && (
+        {continueWatching.length > 0 ? (
           <CarouselRow title="Continuar viendo">
             {continueWatching.map((c: any) => (
               <div key={c.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
@@ -204,10 +212,18 @@ const Index = () => {
               </div>
             ))}
           </CarouselRow>
+        ) : loading && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-6 w-1 bg-primary rounded-full" />
+              <h2 className="text-xl font-bold">Continuar viendo</h2>
+            </div>
+            <CarouselSkeleton count={4} />
+          </div>
         )}
 
         {/* Recién añadido */}
-        {recentlyAdded.length > 0 && (
+        {recentlyAdded.length > 0 ? (
           <CarouselRow title="Recién Añadido">
             {recentlyAdded.map((content) => (
               <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
@@ -223,10 +239,18 @@ const Index = () => {
               </div>
             ))}
           </CarouselRow>
+        ) : loading && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-6 w-1 bg-primary rounded-full" />
+              <h2 className="text-xl font-bold">Recién Añadido</h2>
+            </div>
+            <CarouselSkeleton count={6} />
+          </div>
         )}
 
         {/* Estrenos */}
-        {newReleases.length > 0 && (
+        {newReleases.length > 0 ? (
           <CarouselRow title="Estrenos">
             {newReleases.map((content) => (
               <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
@@ -242,10 +266,18 @@ const Index = () => {
               </div>
             ))}
           </CarouselRow>
+        ) : loading && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-6 w-1 bg-primary rounded-full" />
+              <h2 className="text-xl font-bold">Estrenos</h2>
+            </div>
+            <CarouselSkeleton count={6} />
+          </div>
         )}
 
         {/* Películas */}
-        {movies.length > 0 && (
+        {movies.length > 0 ? (
           <CarouselRow title="Películas Populares">
             {movies.map((content) => (
               <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
@@ -260,6 +292,14 @@ const Index = () => {
               </div>
             ))}
           </CarouselRow>
+        ) : loading && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-6 w-1 bg-primary rounded-full" />
+              <h2 className="text-xl font-bold">Películas Populares</h2>
+            </div>
+            <CarouselSkeleton count={6} />
+          </div>
         )}
 
         {/* Más Películas */}
@@ -283,7 +323,7 @@ const Index = () => {
         )}
 
         {/* Series */}
-        {series.length > 0 && (
+        {series.length > 0 ? (
           <CarouselRow title="Series">
             {series.map((content) => (
               <div key={content.id} className="snap-start shrink-0 w-[45vw] sm:w-[30vw] md:w-[22vw] lg:w-[16vw]">
@@ -298,6 +338,14 @@ const Index = () => {
               </div>
             ))}
           </CarouselRow>
+        ) : loading && (
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <div className="h-6 w-1 bg-primary rounded-full" />
+              <h2 className="text-xl font-bold">Series</h2>
+            </div>
+            <CarouselSkeleton count={6} />
+          </div>
         )}
 
         {!loading &&

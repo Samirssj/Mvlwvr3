@@ -1,7 +1,8 @@
 // src/components/HeroCarousel.tsx
-import React, { useEffect, useRef, useState } from "react";
-import CarouselSlide, {/*SlideItem*/} from "./CarouselSlide";
+import React, { useEffect, useRef, useState, Suspense, lazy } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const CarouselSlide = lazy(() => import("./CarouselSlide"));
 
 interface Item {
 	id: string;
@@ -32,11 +33,19 @@ const HeroCarousel: React.FC<HeroCarouselProps> = ({ items }) => {
 	return (
 		<div className="relative w-full h-[70vh] overflow-hidden rounded-xl">
 			{items.map((item, index) => (
-				<CarouselSlide
-					key={item.id}
-					item={item}
-					active={index === currentIndex}
-				/>
+				<Suspense 
+					key={item.id} 
+					fallback={
+						<div className="absolute inset-0 bg-gradient-to-br from-muted to-secondary animate-pulse" />
+					}
+				>
+					{index === currentIndex && (
+						<CarouselSlide
+							item={item}
+							active={true}
+						/>
+					)}
+				</Suspense>
 			))}
 
 			{/* Indicadores (puntos) */}
